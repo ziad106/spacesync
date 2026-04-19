@@ -1,0 +1,275 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { api } from '../api/client';
+
+const UPCOMING_WINDOW_MIN = 30;
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function nowParts() {
+  const d = new Date();
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    minutes: d.getHours() * 60 + d.getMinutes(),
+    label: d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+    dateLabel: d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
+  };
+}
+
+function toMin(t) {
+  if (typeof t !== 'string') return 0;
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function fmtHM(t) {
+  return typeof t === 'string' ? t.slice(0, 5) : '';
+}
+
+const PURPOSE_CHIP = {
+  Class:   'chip-primary',
+  Lab:     'chip-accent',
+  Seminar: 'chip-primary',
+  Meeting: 'chip-warn',
+  Exam:    'chip-danger',
+  Other:   'chip',
+};
+
+export default function Availability() {
+  const [resources, setResources] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+  const [now, setNow] = useState(nowParts());
+
+  const load = useCallback(async () => {
+    setErr(null);
+    try {
+      const [rs, bs] = await Promise.all([api.listResources(), api.listBookings()]);
+      setResources(rs);
+      setBookings(bs);
+    } catch (e) {
+      setErr(e.message);
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Tick clock every 30s so states refresh automatically
+  useEffect(() => {
+    const id = setInterval(() => setNow(nowParts()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const { occupied, upcoming, free } = useMemo(() => {
+    const rooms = resources.filter((r) => r.type === 'Room');
+    const todays = bookings.filter((b) => b.booking_date === now.date);
+
+    const ongoingByRoom = new Map(); // id -> booking
+    const upcomingByRoom = new Map(); // id -> earliest upcoming booking in next 30 min
+
+    for (const b of todays) {
+      const s = toMin(b.start_time);
+      const e = toMin(b.end_time);
+      if (s <= now.minutes && now.minutes < e) {
+        // Keep the one with latest start that still contains now
+        const existing = ongoingByRoom.get(b.resource_id);
+        if (!existing || toMin(existing.start_time) < s) ongoingByRoom.set(b.resource_id, b);
+      } else if (s > now.minutes && s - now.minutes <= UPCOMING_WINDOW_MIN) {
+        const existing = upcomingByRoom.get(b.resource_id);
+        if (!existing || toMin(existing.start_time) > s) upcomingByRoom.set(b.resource_id, b);
+      }
+    }
+
+    const occupied = [];
+    const upcoming = [];
+    const free = [];
+
+    for (const r of rooms) {
+      const on = ongoingByRoom.get(r.id);
+      const up = upcomingByRoom.get(r.id);
+      if (on) {
+        occupied.push({ resource: r, booking: on, nextBooking: up });
+      } else if (up) {
+        upcoming.push({ resource: r, booking: up });
+      } else {
+        free.push({ resource: r });
+      }
+    }
+
+    return { occupied, upcoming, free };
+  }, [resources, bookings, now]);
+
+  return (
+    <section className="fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] font-bold" style={{ color: 'var(--accent)' }}>
+            Live Availability
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-black mt-1" style={{ color: 'var(--ink)' }}>
+            Right Now
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-soft)' }}>
+            {now.dateLabel} · {now.label} · Auto-refreshes every 30s
+          </p>
+        </div>
+        <button className="btn btn-ghost" onClick={load} disabled={loading} aria-label="Refresh">
+          {loading ? 'Loading…' : '↻ Refresh'}
+        </button>
+      </div>
+
+      {/* Headline numbers */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <StatTile label="Occupied" value={occupied.length} tone="busy" />
+        <StatTile label="Starting soon" value={upcoming.length} tone="warn" hint={`within ${UPCOMING_WINDOW_MIN} min`} />
+        <StatTile label="Free now" value={free.length} tone="ok" />
+      </div>
+
+      {err && (
+        <div className="card p-4 mb-4" style={{ color: 'var(--danger)', background: 'var(--danger-soft)', borderColor: 'transparent' }}>
+          ⚠ {err}
+        </div>
+      )}
+
+      {/* Occupied */}
+      <Section title="Occupied now" count={occupied.length} dotClass="busy" emptyText="No rooms are currently in use.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {occupied.map(({ resource, booking, nextBooking }) => (
+            <OccupiedCard key={resource.id} resource={resource} booking={booking} nextBooking={nextBooking} nowMin={now.minutes} />
+          ))}
+        </div>
+      </Section>
+
+      {/* Upcoming */}
+      <Section title={`Occupied within ${UPCOMING_WINDOW_MIN} min`} count={upcoming.length} dotClass="warn" emptyText="No upcoming bookings in the next 30 minutes.">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {upcoming.map(({ resource, booking }) => (
+            <UpcomingCard key={resource.id} resource={resource} booking={booking} nowMin={now.minutes} />
+          ))}
+        </div>
+      </Section>
+
+      {/* Free */}
+      <Section title="Free right now" count={free.length} dotClass="ok" emptyText="No rooms are free at this moment.">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {free.map(({ resource }) => (
+            <FreeCard key={resource.id} resource={resource} />
+          ))}
+        </div>
+      </Section>
+    </section>
+  );
+}
+
+function StatTile({ label, value, tone, hint }) {
+  return (
+    <div className="card p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-soft)' }}>
+          {label}
+        </span>
+        <span className={`status-dot ${tone}`} />
+      </div>
+      <div className="text-3xl font-black mt-1" style={{ color: 'var(--ink)' }}>{value}</div>
+      {hint && <div className="text-[11px]" style={{ color: 'var(--ink-faint)' }}>{hint}</div>}
+    </div>
+  );
+}
+
+function Section({ title, count, dotClass, emptyText, children }) {
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`status-dot ${dotClass}`} />
+        <h2 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{title}</h2>
+        <span className="text-sm font-semibold" style={{ color: 'var(--ink-faint)' }}>· {count}</span>
+      </div>
+      {count === 0 ? (
+        <div className="card p-6 text-sm" style={{ color: 'var(--ink-faint)' }}>{emptyText}</div>
+      ) : children}
+    </div>
+  );
+}
+
+function OccupiedCard({ resource, booking, nextBooking, nowMin }) {
+  const endMin = toMin(booking.end_time);
+  const freesIn = Math.max(0, endMin - nowMin);
+  const purposeCls = PURPOSE_CHIP[booking.purpose] || 'chip';
+  return (
+    <div
+      className="card p-4 relative overflow-hidden"
+      style={{ borderLeft: '4px solid var(--danger)' }}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-base" style={{ color: 'var(--ink)' }}>{resource.name}</span>
+            <span className={`chip ${purposeCls}`}>{booking.purpose}</span>
+          </div>
+          <div className="text-sm mt-1" style={{ color: 'var(--ink-soft)' }}>
+            👤 <strong style={{ color: 'var(--ink)' }}>{booking.requested_by}</strong>
+          </div>
+          <div className="text-xs mt-1" style={{ color: 'var(--ink-faint)' }}>
+            {fmtHM(booking.start_time)} – {fmtHM(booking.end_time)}
+          </div>
+        </div>
+        <span className="badge" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}>
+          <span className="status-dot busy" style={{ width: 6, height: 6, marginRight: 4, boxShadow: 'none' }} />
+          IN USE
+        </span>
+      </div>
+      <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px dashed var(--border)' }}>
+        <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+          Frees in <strong style={{ color: 'var(--ink)' }}>{freesIn} min</strong>
+        </span>
+        {nextBooking && (
+          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+            ↻ {nextBooking.purpose} at {fmtHM(nextBooking.start_time)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingCard({ resource, booking, nowMin }) {
+  const startsIn = Math.max(0, toMin(booking.start_time) - nowMin);
+  const purposeCls = PURPOSE_CHIP[booking.purpose] || 'chip';
+  return (
+    <div className="card p-4" style={{ borderLeft: '4px solid var(--warn)' }}>
+      <div className="flex items-start justify-between">
+        <span className="font-bold" style={{ color: 'var(--ink)' }}>{resource.name}</span>
+        <span className="badge" style={{ background: 'var(--warn-soft)', color: 'var(--warn)' }}>
+          STARTS IN {startsIn}m
+        </span>
+      </div>
+      <div className="text-sm mt-1" style={{ color: 'var(--ink-soft)' }}>
+        👤 {booking.requested_by}
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <span className={`chip ${purposeCls}`}>{booking.purpose}</span>
+        <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
+          {fmtHM(booking.start_time)} – {fmtHM(booking.end_time)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FreeCard({ resource }) {
+  return (
+    <div className="card p-4" style={{ borderLeft: '4px solid var(--ok)' }}>
+      <div className="flex items-start justify-between">
+        <span className="font-bold text-sm" style={{ color: 'var(--ink)' }}>{resource.name}</span>
+        <span className="status-dot ok" />
+      </div>
+      <div className="text-xs mt-1" style={{ color: 'var(--ink-soft)' }}>
+        Capacity {resource.capacity}
+      </div>
+    </div>
+  );
+}
