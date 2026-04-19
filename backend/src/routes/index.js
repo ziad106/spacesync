@@ -6,6 +6,7 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'spacesync-backend', time: new Date().toISOString() });
 });
 
+router.use('/auth', require('./auth.routes'));
 router.use('/resources', require('./resources.routes'));
 router.use('/bookings', require('./bookings.routes'));
 

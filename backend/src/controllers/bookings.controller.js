@@ -1,5 +1,7 @@
 const { Op } = require('sequelize');
-const { Booking, Resource } = require('../models');
+const { Booking, Resource, EarlyRelease, User, sequelize } = require('../models');
+
+const EARLY_RELEASE_POINTS = 10;
 
 function isValidDate(str) {
   if (typeof str !== 'string') return false;
@@ -37,7 +39,14 @@ function fmtHM(t) {
 exports.list = async (req, res, next) => {
   try {
     const bookings = await Booking.findAll({
-      include: [{ model: Resource, as: 'resource' }],
+      include: [
+        { model: Resource, as: 'resource' },
+        {
+          model: EarlyRelease,
+          as: 'early_release',
+          include: [{ model: User, as: 'reporter', attributes: ['id', 'name', 'role'] }],
+        },
+      ],
       order: [['booking_date', 'ASC'], ['start_time', 'ASC'], ['id', 'ASC']],
     });
     res.json(bookings);
@@ -139,6 +148,88 @@ exports.remove = async (req, res, next) => {
 
     await booking.destroy();
     res.json({ deleted: true, id });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/bookings/:id/release
+ * Logged-in user reports that this room was freed early (teacher ended class,
+ * meeting adjourned, lab finished). Awards reward points to the reporter.
+ * Body: { note?: string }
+ */
+exports.releaseEarly = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id must be a positive integer' });
+
+    const booking = await Booking.findByPk(id, {
+      include: [
+        { model: Resource, as: 'resource' },
+        { model: EarlyRelease, as: 'early_release' },
+      ],
+    });
+    if (!booking) return res.status(404).json({ error: `Booking ${id} not found` });
+    if (booking.early_release) {
+      return res.status(409).json({ error: 'This booking has already been reported as released' });
+    }
+
+    // Validate timing: must be an ongoing booking on today's date
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (booking.booking_date !== todayStr) {
+      return res.status(400).json({ error: 'Can only release bookings scheduled for today' });
+    }
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const startMin = toMinutes(fmtHM(booking.start_time));
+    const endMin = toMinutes(fmtHM(booking.end_time));
+    if (nowMin < startMin) {
+      return res.status(400).json({ error: 'This booking has not started yet' });
+    }
+    if (nowMin >= endMin) {
+      return res.status(400).json({ error: 'This booking has already ended — no reward to give' });
+    }
+
+    const nowHHMMSS = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
+    const note = typeof req.body.note === 'string' ? req.body.note.trim().slice(0, 200) : null;
+
+    const result = await sequelize.transaction(async (t) => {
+      const er = await EarlyRelease.create(
+        {
+          booking_id: booking.id,
+          reporter_id: req.user.id,
+          released_at: nowHHMMSS,
+          note: note || null,
+          points_awarded: EARLY_RELEASE_POINTS,
+        },
+        { transaction: t }
+      );
+      await req.user.increment('reward_points', { by: EARLY_RELEASE_POINTS, transaction: t });
+      return er;
+    });
+
+    await req.user.reload();
+    const freshBooking = await Booking.findByPk(booking.id, {
+      include: [
+        { model: Resource, as: 'resource' },
+        {
+          model: EarlyRelease,
+          as: 'early_release',
+          include: [{ model: User, as: 'reporter', attributes: ['id', 'name', 'role'] }],
+        },
+      ],
+    });
+
+    res.status(201).json({
+      booking: freshBooking,
+      release: result,
+      reward: {
+        points_awarded: EARLY_RELEASE_POINTS,
+        total_points: req.user.reward_points,
+      },
+    });
   } catch (err) {
     next(err);
   }

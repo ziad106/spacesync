@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
+import { getUser } from '../auth';
 
 function todayStr() {
   const d = new Date();
@@ -12,7 +13,7 @@ function todayStr() {
 const PURPOSES = ['Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'];
 
 export default function BookingModal({ resource, onClose, onCreated }) {
-  const [requestedBy, setRequestedBy] = useState('');
+  const [requestedBy, setRequestedBy] = useState(() => getUser()?.name || '');
   const [bookingDate, setBookingDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:30');

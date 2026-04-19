@@ -1,5 +1,6 @@
 require('dotenv').config();
-const { sequelize, Resource, Booking } = require('../models');
+const bcrypt = require('bcryptjs');
+const { sequelize, Resource, Booking, User } = require('../models');
 
 // Actual resources of CSE Department, Jahangirnagar University
 // NOTE: every room has a built-in projector + whiteboard; computer labs have 60+ PCs.
@@ -124,6 +125,21 @@ const RESET = process.argv.includes('--reset');
         bookingsCreated += 1;
       }
       console.log(`[seed] Inserted ${bookingsCreated} sample bookings for today (${today})`);
+
+      // Demo users — one per role. Default password for all: "password123"
+      const hash = await bcrypt.hash('password123', 10);
+      const demoUsers = [
+        { name: 'Admin Teacher',    email: 'teacher@ju.edu',   role: 'Teacher',   identifier: 'EMP-0001', reward_points: 30 },
+        { name: 'Protik Saha',      email: 'student@ju.edu',   role: 'Student',   identifier: 'CSE-2021-042', reward_points: 45 },
+        { name: 'CR Rakib',         email: 'cr@ju.edu',        role: 'ClassRep',  identifier: 'CSE-2021-007', reward_points: 70 },
+        { name: 'Office Staff',     email: 'staff@ju.edu',     role: 'Staff',     identifier: 'STF-0012', reward_points: 15 },
+      ];
+      let usersCreated = 0;
+      for (const u of demoUsers) {
+        await User.create({ ...u, password_hash: hash, department: 'CSE' });
+        usersCreated += 1;
+      }
+      console.log(`[seed] Inserted ${usersCreated} demo users (password: "password123")`);
     }
 
     process.exit(0);

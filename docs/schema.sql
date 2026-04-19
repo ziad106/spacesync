@@ -17,10 +17,16 @@ CREATE DATABASE IF NOT EXISTS `spacesync`
 USE `spacesync`;
 
 -- ------------------------------------------------------------
+-- Drop existing tables (order matters for FKs)
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `early_releases`;
+DROP TABLE IF EXISTS `bookings`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `resources`;
+
+-- ------------------------------------------------------------
 -- Table: resources
 -- ------------------------------------------------------------
-DROP TABLE IF EXISTS `bookings`;
-DROP TABLE IF EXISTS `resources`;
 
 CREATE TABLE `resources` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -56,6 +62,48 @@ CREATE TABLE `bookings` (
     FOREIGN KEY (`resource_id`) REFERENCES `resources`(`id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Table: users
+-- ------------------------------------------------------------
+CREATE TABLE `users` (
+  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`          VARCHAR(120) NOT NULL,
+  `email`         VARCHAR(160) NOT NULL,
+  `password_hash` VARCHAR(255) NOT NULL COMMENT 'bcrypt, 10 rounds',
+  `role`          ENUM('Student','Teacher','Staff','ClassRep') NOT NULL DEFAULT 'Student',
+  `department`    VARCHAR(80)  NOT NULL DEFAULT 'CSE',
+  `identifier`    VARCHAR(60)  DEFAULT NULL COMMENT 'Student ID or Employee ID',
+  `reward_points` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at`    DATETIME     NOT NULL,
+  `updated_at`    DATETIME     NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- Table: early_releases
+-- Records that a booking ended earlier than scheduled.
+-- Awards `points_awarded` reward points to the reporting user.
+-- ------------------------------------------------------------
+CREATE TABLE `early_releases` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `booking_id`     INT UNSIGNED NOT NULL,
+  `reporter_id`    INT UNSIGNED NOT NULL,
+  `released_at`    TIME         NOT NULL,
+  `note`           VARCHAR(200) DEFAULT NULL,
+  `points_awarded` INT UNSIGNED NOT NULL DEFAULT 10,
+  `created_at`     DATETIME     NOT NULL,
+  `updated_at`     DATETIME     NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_early_releases_booking` (`booking_id`),
+  CONSTRAINT `fk_early_releases_booking`
+    FOREIGN KEY (`booking_id`) REFERENCES `bookings`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_early_releases_reporter`
+    FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

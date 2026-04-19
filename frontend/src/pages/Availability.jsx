@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
+import { getUser, updateUser, isAuthed } from '../auth';
 
 const UPCOMING_WINDOW_MIN = 30;
 
@@ -36,11 +38,13 @@ const PURPOSE_CHIP = {
 };
 
 export default function Availability() {
+  const nav = useNavigate();
   const [resources, setResources] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [now, setNow] = useState(nowParts());
+  const [releasingId, setReleasingId] = useState(null);
 
   const load = useCallback(async () => {
     setErr(null);
@@ -64,6 +68,33 @@ export default function Availability() {
     return () => clearInterval(id);
   }, []);
 
+  async function handleRelease(booking) {
+    if (!isAuthed()) {
+      toast('Sign in to earn reward points', { icon: '🔒' });
+      nav('/login', { state: { from: '/availability' } });
+      return;
+    }
+    const ok = window.confirm(
+      `Mark "${booking.resource?.name}" as freed early?\n\n` +
+      `${booking.purpose} by ${booking.requested_by} ended before ${fmtHM(booking.end_time)}.\n` +
+      `You'll earn +10 reward points for helping your department.`
+    );
+    if (!ok) return;
+    setReleasingId(booking.id);
+    try {
+      const res = await api.releaseBooking(booking.id);
+      toast.success(`+${res.reward.points_awarded} pts! Total ${res.reward.total_points} 🎉`);
+      // update cached user in localStorage so navbar reflects new points
+      const cur = getUser();
+      if (cur) updateUser({ ...cur, reward_points: res.reward.total_points });
+      await load();
+    } catch (e) {
+      toast.error(e.message || 'Could not release room');
+    } finally {
+      setReleasingId(null);
+    }
+  }
+
   const { occupied, upcoming, free } = useMemo(() => {
     const rooms = resources.filter((r) => r.type === 'Room');
     const todays = bookings.filter((b) => b.booking_date === now.date);
@@ -74,8 +105,11 @@ export default function Availability() {
     for (const b of todays) {
       const s = toMin(b.start_time);
       const e = toMin(b.end_time);
-      if (s <= now.minutes && now.minutes < e) {
-        // Keep the one with latest start that still contains now
+      // A booking released early counts as over at released_at
+      const effectiveEnd = b.early_release
+        ? Math.min(e, toMin(b.early_release.released_at))
+        : e;
+      if (s <= now.minutes && now.minutes < effectiveEnd) {
         const existing = ongoingByRoom.get(b.resource_id);
         if (!existing || toMin(existing.start_time) < s) ongoingByRoom.set(b.resource_id, b);
       } else if (s > now.minutes && s - now.minutes <= UPCOMING_WINDOW_MIN) {
@@ -139,7 +173,15 @@ export default function Availability() {
       <Section title="Occupied now" count={occupied.length} dotClass="busy" emptyText="No rooms are currently in use.">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {occupied.map(({ resource, booking, nextBooking }) => (
-            <OccupiedCard key={resource.id} resource={resource} booking={booking} nextBooking={nextBooking} nowMin={now.minutes} />
+            <OccupiedCard
+              key={resource.id}
+              resource={resource}
+              booking={booking}
+              nextBooking={nextBooking}
+              nowMin={now.minutes}
+              onRelease={handleRelease}
+              releasing={releasingId === booking.id}
+            />
           ))}
         </div>
       </Section>
@@ -195,7 +237,7 @@ function Section({ title, count, dotClass, emptyText, children }) {
   );
 }
 
-function OccupiedCard({ resource, booking, nextBooking, nowMin }) {
+function OccupiedCard({ resource, booking, nextBooking, nowMin, onRelease, releasing }) {
   const endMin = toMin(booking.end_time);
   const freesIn = Math.max(0, endMin - nowMin);
   const purposeCls = PURPOSE_CHIP[booking.purpose] || 'chip';
@@ -222,15 +264,24 @@ function OccupiedCard({ resource, booking, nextBooking, nowMin }) {
           IN USE
         </span>
       </div>
-      <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px dashed var(--border)' }}>
-        <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+      <div className="flex items-center justify-between mt-3 pt-3 gap-3" style={{ borderTop: '1px dashed var(--border)' }}>
+        <div className="text-xs min-w-0" style={{ color: 'var(--ink-soft)' }}>
           Frees in <strong style={{ color: 'var(--ink)' }}>{freesIn} min</strong>
-        </span>
-        {nextBooking && (
-          <span className="text-xs" style={{ color: 'var(--ink-faint)' }}>
-            ↻ {nextBooking.purpose} at {fmtHM(nextBooking.start_time)}
-          </span>
-        )}
+          {nextBooking && (
+            <span className="block truncate" style={{ color: 'var(--ink-faint)' }}>
+              ↻ next: {nextBooking.purpose} at {fmtHM(nextBooking.start_time)}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => onRelease?.(booking)}
+          disabled={releasing}
+          className="btn-accent text-xs !px-3 !py-1.5 whitespace-nowrap"
+          title="Report that this room was freed early — earn +10 pts"
+        >
+          {releasing ? 'Releasing…' : '★ Release Early'}
+        </button>
       </div>
     </div>
   );
