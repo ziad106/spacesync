@@ -25,6 +25,7 @@ client.interceptors.response.use(
       'Network error';
     const normalized = new Error(msg);
     normalized.status = err?.response?.status;
+    normalized.data = err?.response?.data; // raw body, e.g. { error, status: 'Pending' }
     normalized.original = err;
     // Auto-logout on 401 so user is kicked back to the login page
     if (normalized.status === 401 && getToken()) logout();
@@ -51,6 +52,12 @@ export const api = {
   deleteBooking: (id) => client.delete(`/bookings/${id}`).then((r) => r.data),
   releaseBooking: (id, note) =>
     client.post(`/bookings/${id}/release`, { note }).then((r) => r.data),
+
+  // admin
+  adminListUsers: (status) =>
+    client.get('/admin/users', { params: status ? { status } : undefined }).then((r) => r.data),
+  adminApproveUser: (id) => client.post(`/admin/users/${id}/approve`).then((r) => r.data),
+  adminRejectUser:  (id) => client.post(`/admin/users/${id}/reject`).then((r) => r.data),
 };
 
 export default client;

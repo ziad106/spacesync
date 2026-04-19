@@ -72,6 +72,11 @@ export default function NavBar() {
             <NavLink to="/" end className={linkClass}>Dashboard</NavLink>
             <NavLink to="/availability" className={linkClass}>Right&nbsp;Now</NavLink>
             <NavLink to="/bookings" className={linkClass}>Schedule</NavLink>
+            {user?.role === 'Admin' && (
+              <NavLink to="/admin/users" className={linkClass} title="Admin · User approvals">
+                Admin
+              </NavLink>
+            )}
             <button
               type="button"
               onClick={() => setTheme(toggleTheme())}

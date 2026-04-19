@@ -12,6 +12,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // Sticky alert for Pending / Rejected statuses (more visible than a toast).
+  const [statusAlert, setStatusAlert] = useState(null); // { kind: 'Pending'|'Rejected', message }
 
   async function submit(e) {
     e.preventDefault();
@@ -21,13 +23,21 @@ export default function Login() {
       return;
     }
     setBusy(true);
+    setStatusAlert(null);
     try {
       const { token, user } = await api.login({ email: email.trim(), password });
       setAuth({ token, user });
       toast.success(`Welcome back, ${user.name}!`);
       nav(redirectTo, { replace: true });
     } catch (err) {
-      toast.error(err.message || 'Login failed');
+      // Special-case the admin-approval statuses so the user sees a prominent
+      // explanation instead of a fleeting toast.
+      const kind = err?.data?.status;
+      if (kind === 'Pending' || kind === 'Rejected') {
+        setStatusAlert({ kind, message: err.message });
+      } else {
+        toast.error(err.message || 'Login failed');
+      }
     } finally {
       setBusy(false);
     }
@@ -48,6 +58,31 @@ export default function Login() {
         <p className="text-sm mt-2" style={{ color: 'var(--ink-soft)' }}>
           Log in to book rooms, earn rewards and help others find free spaces.
         </p>
+
+        {statusAlert && (
+          <div
+            className="mt-5 p-4 rounded-lg text-sm flex items-start gap-3"
+            style={{
+              background: statusAlert.kind === 'Rejected' ? 'var(--danger-soft)' : 'var(--warn-soft)',
+              color: 'var(--ink)',
+              borderLeft: `4px solid ${statusAlert.kind === 'Rejected' ? 'var(--danger)' : 'var(--warn)'}`,
+            }}
+          >
+            <span className="text-xl leading-none">
+              {statusAlert.kind === 'Rejected' ? '⛔' : '⏳'}
+            </span>
+            <div>
+              <div className="font-bold">
+                {statusAlert.kind === 'Rejected'
+                  ? 'Account rejected'
+                  : 'Awaiting admin approval'}
+              </div>
+              <div className="text-xs mt-1" style={{ color: 'var(--ink-soft)' }}>
+                {statusAlert.message}
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
           <div>

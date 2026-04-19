@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
-import { setAuth } from '../auth';
 
 const ROLES = [
   { value: 'Student',  label: 'Student',              desc: 'Book study rooms, see availability' },
@@ -12,7 +11,6 @@ const ROLES = [
 ];
 
 export default function Register() {
-  const nav = useNavigate();
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -22,6 +20,9 @@ export default function Register() {
     identifier: '',
   });
   const [busy, setBusy] = useState(false);
+  // Once the server accepts the signup, we hide the form and show a success
+  // panel explaining that the account is awaiting admin approval.
+  const [submitted, setSubmitted] = useState(null); // { name, email } | null
 
   function update(k, v) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -38,7 +39,7 @@ export default function Register() {
     }
     setBusy(true);
     try {
-      const { token, user } = await api.register({
+      const { user } = await api.register({
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
@@ -46,14 +47,40 @@ export default function Register() {
         department: form.department.trim() || 'CSE',
         identifier: form.identifier.trim(),
       });
-      setAuth({ token, user });
-      toast.success(`Welcome to SpaceSync, ${user.name}!`);
-      nav('/', { replace: true });
+      // No token is issued — show the "awaiting approval" confirmation panel.
+      toast.success('Account submitted — pending admin approval');
+      setSubmitted({ name: user.name, email: user.email });
     } catch (err) {
       toast.error(err.message || 'Registration failed');
     } finally {
       setBusy(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <div className="max-w-xl mx-auto fade-in">
+        <div className="card p-8 text-center">
+          <div className="text-5xl mb-3">⏳</div>
+          <h1 className="text-2xl font-black" style={{ color: 'var(--ink)' }}>
+            Account awaiting approval
+          </h1>
+          <p className="text-sm mt-3" style={{ color: 'var(--ink-soft)' }}>
+            Hi <strong style={{ color: 'var(--ink)' }}>{submitted.name}</strong>, thanks for signing up!
+            Your account (<code>{submitted.email}</code>) has been created and is now
+            <strong style={{ color: 'var(--warn)' }}> pending administrator approval</strong>.
+          </p>
+          <p className="text-sm mt-3" style={{ color: 'var(--ink-soft)' }}>
+            You will be able to sign in as soon as an admin approves your account.
+            If it takes longer than expected, please contact the SpaceSync administrator.
+          </p>
+          <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
+            <Link to="/login" className="btn-primary">Go to Sign in</Link>
+            <Link to="/" className="btn-ghost">Back to home</Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -66,6 +93,17 @@ export default function Register() {
         <p className="text-sm mt-2" style={{ color: 'var(--ink-soft)' }}>
           Sign up to book resources and earn reward points by helping your department.
         </p>
+        <div
+          className="mt-4 p-3 rounded-lg text-xs flex items-start gap-2"
+          style={{ background: 'var(--warn-soft)', color: 'var(--ink)' }}
+        >
+          <span>⏳</span>
+          <span>
+            <strong>Admin approval required.</strong> New accounts are disabled until an
+            administrator approves them — you won't be able to sign in immediately after
+            registering.
+          </span>
+        </div>
 
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
           <div>

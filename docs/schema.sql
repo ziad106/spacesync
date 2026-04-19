@@ -53,6 +53,8 @@ CREATE TABLE `users` (
   `department`    VARCHAR(80)  NOT NULL DEFAULT 'CSE',
   `identifier`    VARCHAR(60)  DEFAULT NULL COMMENT 'Student ID or Employee ID',
   `reward_points` INT UNSIGNED NOT NULL DEFAULT 0,
+  `status`        ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending'
+                   COMMENT 'Admin-approval lifecycle; only Approved can log in',
   `created_at`    DATETIME     NOT NULL,
   `updated_at`    DATETIME     NOT NULL,
   PRIMARY KEY (`id`),

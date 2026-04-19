@@ -43,10 +43,17 @@ exports.register = async (req, res, next) => {
       role,
       department,
       identifier,
+      // Every new signup starts Pending; an Admin must approve before login.
+      status: 'Pending',
     });
 
-    const token = signToken(user);
-    res.status(201).json({ token, user: sanitize(user) });
+    // Intentionally NO token is issued — the user cannot log in until an
+    // Admin flips their status to Approved.
+    res.status(201).json({
+      user: sanitize(user),
+      pending: true,
+      message: 'Your account has been created and is awaiting admin approval. You will be able to sign in once an administrator approves it.',
+    });
   } catch (err) {
     next(err);
   }
@@ -65,6 +72,20 @@ exports.login = async (req, res, next) => {
 
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
+
+    // Gate on approval status — Pending and Rejected users cannot log in.
+    if (user.status === 'Pending') {
+      return res.status(403).json({
+        error: 'Your account is pending admin approval. Please try again once an administrator approves it.',
+        status: 'Pending',
+      });
+    }
+    if (user.status === 'Rejected') {
+      return res.status(403).json({
+        error: 'Your account has been rejected. Please contact the administrator.',
+        status: 'Rejected',
+      });
+    }
 
     const token = signToken(user);
     res.json({ token, user: sanitize(user) });

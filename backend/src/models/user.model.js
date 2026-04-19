@@ -3,6 +3,9 @@ const { DataTypes } = require('sequelize');
 const ROLES = ['Student', 'Teacher', 'Staff', 'ClassRep', 'Admin'];
 // Roles allowed to create/own a booking. Students are deliberately excluded.
 const BOOKING_ROLES = ['Teacher', 'ClassRep', 'Staff', 'Admin'];
+// Account approval lifecycle. New signups start Pending; an Admin must Approve
+// them before they can log in. Rejected accounts cannot log in either.
+const STATUSES = ['Pending', 'Approved', 'Rejected'];
 
 module.exports = (sequelize) => {
   const User = sequelize.define(
@@ -44,6 +47,13 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: 0,
       },
+      status: {
+        // Admin-approval workflow — Pending users can be created but cannot
+        // log in until an Admin flips them to Approved.
+        type: DataTypes.ENUM(...STATUSES),
+        allowNull: false,
+        defaultValue: 'Pending',
+      },
     },
     {
       tableName: 'users',
@@ -60,5 +70,6 @@ module.exports = (sequelize) => {
 
   User.ROLES = ROLES;
   User.BOOKING_ROLES = BOOKING_ROLES;
+  User.STATUSES = STATUSES;
   return User;
 };

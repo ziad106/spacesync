@@ -15,8 +15,9 @@ real time. Built for **CSE 362 Lab Final**.
 - **Accounts with roles** — register as **Student / Teacher / Staff / Class Representative** (Admin is seeded, not self-registerable); JWT-based auth, bcrypt password hashing
 - **Role-based permissions**
   - Only **Teachers, Class Representatives, Staff and Admins** can create bookings — Students cannot book directly
-  - You can only cancel **bookings you created**; **Admins** can cancel any booking
+  - You can only cancel **bookings you created**; **Admins** can cancel any booking; **Students cannot cancel** at all
   - The booker's name is taken from the logged-in account — no impersonation possible
+- **Admin-approval workflow** — new sign-ups start as **Pending** and **cannot log in** until an Admin approves them from the dedicated **Admin → User approvals** console (Approve / Reject, with Pending / Approved / Rejected tabs and live counts)
 - **Reward system** — any logged-in user can hit **★ Release Early** on an occupied room when a class / meeting / lab ends before its scheduled end time. They earn **+10 reward points**, and the room instantly flips to "Free" for the whole department
 - **Badges + leaderboard** — climb from 🌱 Newcomer → 🤝 Contributor (20) → 🌟 Helper (50) → 🏆 Champion (100) → 👑 Legend (250); top-10 board on the profile page
 - **Schedule viewer** — filterable table of every booking with cancel
@@ -194,9 +195,12 @@ Base URL: `http://localhost:5000/api`
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/health` | — | Liveness + DB check |
-| `POST` | `/auth/register` | — | Create an account (role-validated) |
-| `POST` | `/auth/login` | — | Returns `{ token, user }` |
+| `POST` | `/auth/register` | — | Create an account (role-validated). Returns `{ user, pending: true, message }`; **no token** — account must be approved by an Admin before login |
+| `POST` | `/auth/login` | — | Returns `{ token, user }`. Returns **403** with `{status:"Pending"}` if not yet approved, or `{status:"Rejected"}` if denied |
 | `GET` | `/auth/me` | **Bearer** | Current user + `{ reports, rank }` |
+| `GET` | `/admin/users` | **Admin** | List users (optional `?status=Pending\|Approved\|Rejected`) |
+| `POST` | `/admin/users/:id/approve` | **Admin** | Approve a user so they can log in |
+| `POST` | `/admin/users/:id/reject` | **Admin** | Reject a user (blocks login) |
 | `GET` | `/auth/leaderboard` | — | Top-10 users by `reward_points` |
 | `GET` | `/resources` | — | List all resources |
 | `POST` | `/resources` | — | Create a resource |
@@ -275,6 +279,7 @@ See [`docs/schema.sql`](docs/schema.sql) for the DDL. Summary:
 | `department` | VARCHAR(80) DEFAULT 'CSE' | |
 | `identifier` | VARCHAR(60) NULL | Student ID / Employee ID |
 | `reward_points` | INT UNSIGNED DEFAULT 0 | |
+| `status` | ENUM('Pending','Approved','Rejected') DEFAULT 'Pending' | only `Approved` users can log in |
 
 **`early_releases`**
 | Column | Type | Notes |

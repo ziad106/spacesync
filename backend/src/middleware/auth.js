@@ -46,4 +46,16 @@ function signToken(user) {
   );
 }
 
-module.exports = { requireAuth, optionalAuth, signToken };
+/** Require a valid JWT AND that the user has the Admin role. Must be used
+ *  after requireAuth (or composed inline as below). */
+async function requireAdmin(req, res, next) {
+  return requireAuth(req, res, (err) => {
+    if (err) return next(err);
+    if (!req.user || req.user.role !== 'Admin') {
+      return res.status(403).json({ error: 'Admin privileges required' });
+    }
+    return next();
+  });
+}
+
+module.exports = { requireAuth, optionalAuth, requireAdmin, signToken };

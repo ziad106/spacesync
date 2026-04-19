@@ -6,6 +6,7 @@ import Availability from './pages/Availability';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import AdminUsers from './pages/AdminUsers';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

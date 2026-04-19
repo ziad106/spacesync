@@ -84,7 +84,14 @@ const RESET = process.argv.includes('--reset');
       ];
       const createdUsers = {};
       for (const u of demoUsers) {
-        const row = await User.create({ ...u, password_hash: hash, department: 'CSE' });
+        // All seeded accounts are pre-approved so the demo is usable out of
+        // the box. New real signups via /api/auth/register will be Pending.
+        const row = await User.create({
+          ...u,
+          password_hash: hash,
+          department: 'CSE',
+          status: 'Approved',
+        });
         createdUsers[u.email] = row;
       }
       console.log(`[seed] Inserted ${demoUsers.length} demo users (password: "password123")`);
