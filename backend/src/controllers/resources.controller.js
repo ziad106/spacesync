@@ -22,6 +22,8 @@ exports.create = async (req, res, next) => {
     const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
     const type = typeof req.body.type === 'string' ? req.body.type.trim() : '';
     const capacity = parseCapacity(req.body.capacity);
+    const facilities =
+      typeof req.body.facilities === 'string' ? req.body.facilities.trim() : '';
 
     if (!name) return res.status(400).json({ error: 'name is required' });
     if (!VALID_TYPES.includes(type)) {
@@ -31,7 +33,7 @@ exports.create = async (req, res, next) => {
       return res.status(400).json({ error: 'capacity must be a positive integer' });
     }
 
-    const resource = await Resource.create({ name, type, capacity });
+    const resource = await Resource.create({ name, type, capacity, facilities });
     res.status(201).json(resource);
   } catch (err) {
     next(err);

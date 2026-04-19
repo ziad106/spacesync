@@ -24,6 +24,11 @@ module.exports = (sequelize) => {
         allowNull: false,
         validate: { min: { args: [1], msg: 'capacity must be >= 1' } },
       },
+      facilities: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        defaultValue: '',
+      },
     },
     {
       tableName: 'resources',

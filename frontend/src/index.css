@@ -6,33 +6,69 @@ html, body, #root { height: 100%; }
 
 body {
   background:
-    radial-gradient(1200px 600px at -10% -10%, rgba(37,99,235,0.12), transparent 60%),
-    radial-gradient(900px 500px at 110% 10%, rgba(16,185,129,0.10), transparent 60%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    radial-gradient(1100px 600px at 10% -10%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%,  rgba(245, 158, 11, 0.14), transparent 60%),
+    radial-gradient(800px 500px at 50% 110%, rgba(167, 139, 250, 0.12), transparent 55%),
+    linear-gradient(180deg, #fdfcf9 0%, #f5f3ee 100%);
   min-height: 100vh;
+  color: #1f1b2e;
+  font-feature-settings: 'ss01', 'cv11';
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1; }
-  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm hover:shadow focus:ring-brand-500; }
-  .btn-danger  { @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow focus:ring-red-500; }
-  .btn-ghost   { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 focus:ring-slate-300; }
-  .card        { @apply bg-white border border-slate-200 rounded-2xl shadow-sm; }
-  .input       { @apply w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors; }
-  .label       { @apply block text-sm font-semibold text-slate-700 mb-1.5; }
-  .badge       { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold; }
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1; }
+  .btn-primary {
+    @apply btn text-white focus:ring-brand-500;
+    background-image: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%);
+    box-shadow: 0 6px 16px -6px rgba(79,70,229,0.45);
+  }
+  .btn-primary:hover { filter: brightness(1.06); box-shadow: 0 10px 22px -8px rgba(79,70,229,0.55); }
+  .btn-danger  { @apply btn bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow focus:ring-rose-500; }
+  .btn-ghost   { @apply btn bg-white/80 text-slate-700 border border-surface-200 hover:bg-white backdrop-blur focus:ring-brand-300; }
+  .btn-accent  {
+    @apply btn text-brand-900 focus:ring-accent-400;
+    background-image: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    box-shadow: 0 6px 16px -6px rgba(245,158,11,0.45);
+  }
+
+  .card  { @apply bg-white/90 backdrop-blur border border-surface-200 rounded-2xl shadow-soft; }
+  .input {
+    @apply w-full rounded-xl border border-surface-200 bg-white/90 px-3.5 py-2.5 text-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-colors;
+  }
+  .label { @apply block text-sm font-semibold text-slate-700 mb-1.5; }
+  .badge { @apply inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold; }
+  .chip  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-brand-50 text-brand-700 border border-brand-100; }
 
   .resource-card {
     @apply card p-5 flex flex-col relative overflow-hidden transition-all duration-200;
   }
   .resource-card:hover {
-    @apply shadow-lg -translate-y-0.5 border-blue-200;
+    @apply -translate-y-1 shadow-lift border-brand-200;
   }
   .resource-card::before {
     content: '';
-    @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-emerald-500 opacity-0 transition-opacity duration-200;
+    @apply absolute top-0 left-0 right-0 h-1 opacity-0 transition-opacity duration-200;
+    background-image: linear-gradient(90deg, #4f46e5, #7c3aed, #f59e0b);
   }
   .resource-card:hover::before { @apply opacity-100; }
+
+  .hero {
+    @apply relative overflow-hidden rounded-3xl p-8 sm:p-10 text-white;
+    background-image:
+      radial-gradient(600px 260px at 10% -20%, rgba(255,255,255,0.18), transparent 60%),
+      radial-gradient(500px 260px at 110% 120%, rgba(251,191,36,0.28), transparent 60%),
+      linear-gradient(135deg, #312e81 0%, #4338ca 35%, #7c3aed 75%, #db2777 100%);
+    box-shadow: 0 20px 50px -20px rgba(49, 46, 129, 0.6);
+  }
+  .hero::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-40 mix-blend-overlay;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
 }
 
 /* Smooth modal animation */

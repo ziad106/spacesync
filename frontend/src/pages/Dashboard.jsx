@@ -49,18 +49,33 @@ export default function Dashboard() {
   return (
     <section className="fade-in">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl p-8 mb-8 text-white shadow-lg"
-           style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #059669 100%)' }}>
+      <div className="hero mb-8">
         <div className="relative z-10 max-w-2xl">
-          <p className="text-brand-100 text-xs uppercase tracking-widest font-semibold">Jahangirnagar University · CSE</p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold mt-1">Book a Room or Equipment</h1>
-          <p className="text-brand-50/90 mt-2 text-sm sm:text-base">
-            Reserve classrooms, labs, libraries, and shared equipment in seconds.
-            Every booking is instantly visible to the whole department.
+          <p className="text-accent-200 text-xs uppercase tracking-[0.2em] font-bold">
+            Jahangirnagar University · CSE
           </p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mt-2 leading-tight">
+            Book a room,<br className="hidden sm:block" />
+            in seconds.
+          </h1>
+          <p className="text-indigo-100/90 mt-3 text-sm sm:text-base max-w-lg">
+            Reserve classrooms, labs, libraries, and shared equipment — every booking is
+            instantly visible to the whole department.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20">
+              <span>🏛️</span> {resources.filter(r => r.type === 'Room').length} rooms
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20">
+              <span>🔧</span> {resources.filter(r => r.type === 'Equipment').length} equipment
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-400/90 text-brand-900 border border-accent-300">
+              <span>⚡</span> Live updates
+            </span>
+          </div>
         </div>
-        <div className="pointer-events-none absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -right-24 bottom-0 w-72 h-72 rounded-full bg-emerald-300/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-8 -top-8 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -right-20 -bottom-16 w-80 h-80 rounded-full bg-accent-400/25 blur-3xl" />
       </div>
 
       {/* Toolbar */}
@@ -106,28 +121,44 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visible.map((r) => (
-            <div key={r.id} className="resource-card">
-              <div className="flex items-start justify-between">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 text-2xl grid place-items-center">
-                  {iconFor(r)}
+          {visible.map((r) => {
+            const facilities = (r.facilities || '').split(',').map(s => s.trim()).filter(Boolean);
+            return (
+              <div key={r.id} className="resource-card">
+                <div className="flex items-start justify-between">
+                  <div className="w-12 h-12 rounded-xl text-2xl grid place-items-center shadow-sm"
+                       style={{ backgroundImage: 'linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%)' }}>
+                    {iconFor(r)}
+                  </div>
+                  <span className={`badge ${r.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-accent-100 text-accent-700'}`}>
+                    {r.type}
+                  </span>
                 </div>
-                <span className={`badge ${r.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                  {r.type}
-                </span>
+                <h3 className="font-bold text-lg mt-3 leading-tight">{r.name}</h3>
+                <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
+                  <span>👥</span> Capacity <strong className="text-slate-700">{r.capacity}</strong>
+                </div>
+                {facilities.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {facilities.slice(0, 4).map((f, i) => (
+                      <span key={i} className="chip">{f}</span>
+                    ))}
+                    {facilities.length > 4 && (
+                      <span className="chip bg-surface-100 text-slate-500 border-surface-200">
+                        +{facilities.length - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <button
+                  className="btn-primary w-full mt-4"
+                  onClick={() => setSelected(r)}
+                >
+                  Book Now
+                </button>
               </div>
-              <h3 className="font-bold text-lg mt-3 leading-tight">{r.name}</h3>
-              <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
-                <span>👥</span> Capacity <strong className="text-slate-700">{r.capacity}</strong>
-              </div>
-              <button
-                className="btn-primary w-full mt-5"
-                onClick={() => setSelected(r)}
-              >
-                Book Now
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

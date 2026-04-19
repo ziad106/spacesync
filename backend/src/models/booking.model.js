@@ -23,6 +23,14 @@ module.exports = (sequelize) => {
         allowNull: false,
         validate: { isDate: { msg: 'booking_date must be a valid date (YYYY-MM-DD)' } },
       },
+      start_time: {
+        type: DataTypes.TIME,
+        allowNull: false,
+      },
+      end_time: {
+        type: DataTypes.TIME,
+        allowNull: false,
+      },
       status: {
         type: DataTypes.STRING(30),
         allowNull: false,
@@ -33,7 +41,7 @@ module.exports = (sequelize) => {
       tableName: 'bookings',
       underscored: true,
       indexes: [
-        { unique: true, fields: ['resource_id', 'booking_date'], name: 'uniq_resource_date' },
+        { fields: ['resource_id', 'booking_date'], name: 'idx_resource_date' },
       ],
     }
   );

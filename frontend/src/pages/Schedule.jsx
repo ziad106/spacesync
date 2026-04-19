@@ -11,6 +11,11 @@ function formatDate(iso) {
   } catch { return iso; }
 }
 
+function fmtTime(t) {
+  // MySQL TIME returns HH:MM:SS; trim seconds
+  return typeof t === 'string' ? t.slice(0, 5) : (t ?? '');
+}
+
 export default function Schedule() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +120,7 @@ export default function Schedule() {
                   <th className="text-left px-4 py-3 font-semibold">Type</th>
                   <th className="text-left px-4 py-3 font-semibold">Requested By</th>
                   <th className="text-left px-4 py-3 font-semibold">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold">Time</th>
                   <th className="text-left px-4 py-3 font-semibold">Status</th>
                   <th className="text-right px-4 py-3 font-semibold">Action</th>
                 </tr>
@@ -124,12 +130,15 @@ export default function Schedule() {
                   <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
                     <td className="px-4 py-3 font-medium">{b.resource?.name || `#${b.resource_id}`}</td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${b.resource?.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      <span className={`badge ${b.resource?.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-accent-100 text-accent-700'}`}>
                         {b.resource?.type || '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3">{b.requested_by}</td>
                     <td className="px-4 py-3 tabular-nums">{formatDate(b.booking_date)}</td>
+                    <td className="px-4 py-3 tabular-nums font-medium text-brand-700">
+                      {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
+                    </td>
                     <td className="px-4 py-3">
                       <span className="badge bg-emerald-100 text-emerald-700">● {b.status}</span>
                     </td>
@@ -161,6 +170,7 @@ export default function Schedule() {
                 <div className="text-sm text-slate-600 mt-3 space-y-1">
                   <div>👤 {b.requested_by}</div>
                   <div>📅 {formatDate(b.booking_date)}</div>
+                  <div className="font-medium text-brand-700">⏰ {fmtTime(b.start_time)} – {fmtTime(b.end_time)}</div>
                 </div>
                 <button
                   className="btn-danger w-full mt-3"
@@ -179,7 +189,7 @@ export default function Schedule() {
         title="Cancel this booking?"
         message={
           pendingDelete
-            ? `"${pendingDelete.resource?.name}" on ${formatDate(pendingDelete.booking_date)} by ${pendingDelete.requested_by}`
+            ? `"${pendingDelete.resource?.name}" on ${formatDate(pendingDelete.booking_date)}, ${fmtTime(pendingDelete.start_time)}–${fmtTime(pendingDelete.end_time)} by ${pendingDelete.requested_by}`
             : ''
         }
         confirmLabel="Yes, cancel"

@@ -12,6 +12,8 @@ function todayStr() {
 export default function BookingModal({ resource, onClose, onCreated }) {
   const [requestedBy, setRequestedBy] = useState('');
   const [bookingDate, setBookingDate] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:30');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const firstRef = useRef(null);
@@ -29,6 +31,9 @@ export default function BookingModal({ resource, onClose, onCreated }) {
     else if (requestedBy.trim().length < 2) e.requestedBy = 'Name is too short';
     if (!bookingDate) e.bookingDate = 'Please pick a date';
     else if (bookingDate < todayStr()) e.bookingDate = 'Date cannot be in the past';
+    if (!startTime) e.startTime = 'Pick a start time';
+    if (!endTime) e.endTime = 'Pick an end time';
+    if (startTime && endTime && endTime <= startTime) e.endTime = 'End must be after start';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -43,8 +48,10 @@ export default function BookingModal({ resource, onClose, onCreated }) {
         resource_id: resource.id,
         requested_by: requestedBy.trim(),
         booking_date: bookingDate,
+        start_time: startTime,
+        end_time: endTime,
       });
-      toast.success(`Booked "${resource.name}" for ${bookingDate}`);
+      toast.success(`Booked "${resource.name}" · ${bookingDate} ${startTime}–${endTime}`);
       onCreated?.(booking);
       onClose();
     } catch (err) {
@@ -107,13 +114,40 @@ export default function BookingModal({ resource, onClose, onCreated }) {
             <input
               id="booking_date"
               type="date"
-              className={`input ${errors.bookingDate ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : ''}`}
+              className={`input ${errors.bookingDate ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400' : ''}`}
               min={todayStr()}
               value={bookingDate}
               onChange={(e) => setBookingDate(e.target.value)}
               disabled={submitting}
             />
-            {errors.bookingDate && <p className="text-xs text-red-600 mt-1">{errors.bookingDate}</p>}
+            {errors.bookingDate && <p className="text-xs text-rose-600 mt-1">{errors.bookingDate}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label" htmlFor="start_time">Start Time</label>
+              <input
+                id="start_time"
+                type="time"
+                className={`input ${errors.startTime ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400' : ''}`}
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                disabled={submitting}
+              />
+              {errors.startTime && <p className="text-xs text-rose-600 mt-1">{errors.startTime}</p>}
+            </div>
+            <div>
+              <label className="label" htmlFor="end_time">End Time</label>
+              <input
+                id="end_time"
+                type="time"
+                className={`input ${errors.endTime ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400' : ''}`}
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={submitting}
+              />
+              {errors.endTime && <p className="text-xs text-rose-600 mt-1">{errors.endTime}</p>}
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
