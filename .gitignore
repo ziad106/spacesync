@@ -27,3 +27,6 @@ Thumbs.db
 coverage/
 *.zip
 !SpaceSync.postman_collection.json
+
+# Dev-server runtime artefacts
+backend/.runtime-port
