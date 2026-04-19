@@ -5,6 +5,9 @@ import { Toaster } from 'react-hot-toast';
 
 import App from './App.jsx';
 import './index.css';
+import { initTheme } from './theme';
+
+initTheme();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -14,7 +17,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         position="top-right"
         toastOptions={{
           duration: 3500,
-          style: { borderRadius: '10px', fontSize: '14px' },
+          style: {
+            borderRadius: '10px',
+            fontSize: '14px',
+            background: 'var(--surface)',
+            color: 'var(--ink)',
+            border: '1px solid var(--border)',
+          },
         }}
       />
     </BrowserRouter>

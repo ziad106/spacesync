@@ -57,6 +57,8 @@ exports.create = async (req, res, next) => {
       typeof req.body.start_time === 'string' ? req.body.start_time.trim() : '';
     const endRaw =
       typeof req.body.end_time === 'string' ? req.body.end_time.trim() : '';
+    const purposeRaw =
+      typeof req.body.purpose === 'string' ? req.body.purpose.trim() : 'Class';
 
     if (!resource_id) {
       return res.status(400).json({ error: 'resource_id must be a positive integer' });
@@ -74,6 +76,13 @@ exports.create = async (req, res, next) => {
     if (endMin === null) return res.status(400).json({ error: 'end_time must be HH:MM (24h)' });
     if (endMin <= startMin) {
       return res.status(400).json({ error: 'end_time must be after start_time' });
+    }
+
+    const ALLOWED_PURPOSES = ['Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'];
+    if (!ALLOWED_PURPOSES.includes(purposeRaw)) {
+      return res.status(400).json({
+        error: `purpose must be one of: ${ALLOWED_PURPOSES.join(', ')}`,
+      });
     }
 
     const start_time = normalizeTime(startRaw);
@@ -106,6 +115,7 @@ exports.create = async (req, res, next) => {
       booking_date,
       start_time,
       end_time,
+      purpose: purposeRaw,
       status: 'Confirmed',
     });
 

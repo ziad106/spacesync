@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Dashboard from './pages/Dashboard';
 import Schedule from './pages/Schedule';
+import Availability from './pages/Availability';
 
 export default function App() {
   return (
@@ -10,12 +11,13 @@ export default function App() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/availability" element={<Availability />} />
           <Route path="/bookings" element={<Schedule />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <footer className="border-t border-slate-200 bg-white/70 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500 flex flex-col sm:flex-row gap-1 justify-between">
+      <footer style={{ borderTop: '1px solid var(--border)', background: 'color-mix(in srgb, var(--surface) 80%, transparent)' }}>
+        <div className="max-w-6xl mx-auto px-4 py-3 text-xs flex flex-col sm:flex-row gap-1 justify-between" style={{ color: 'var(--ink-faint)' }}>
           <span>SpaceSync © {new Date().getFullYear()} — CSE, Jahangirnagar University</span>
           <span>CSE 362 Lab Final</span>
         </div>

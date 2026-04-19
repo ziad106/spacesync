@@ -9,11 +9,14 @@ function todayStr() {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+const PURPOSES = ['Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'];
+
 export default function BookingModal({ resource, onClose, onCreated }) {
   const [requestedBy, setRequestedBy] = useState('');
   const [bookingDate, setBookingDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:30');
+  const [purpose, setPurpose] = useState(resource.type === 'Equipment' ? 'Other' : 'Class');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const firstRef = useRef(null);
@@ -50,6 +53,7 @@ export default function BookingModal({ resource, onClose, onCreated }) {
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
+        purpose,
       });
       toast.success(`Booked "${resource.name}" · ${bookingDate} ${startTime}–${endTime}`);
       onCreated?.(booking);
@@ -83,13 +87,23 @@ export default function BookingModal({ resource, onClose, onCreated }) {
           ✕
         </button>
 
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white grid place-items-center text-lg shadow-sm">
-            {resource.type === 'Room' ? '🏛️' : '🔧'}
+        <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div
+            className="w-11 h-11 rounded-lg grid place-items-center text-lg"
+            style={{
+              background: resource.type === 'Room' ? 'var(--primary)' : 'var(--accent)',
+              color: resource.type === 'Room' ? 'var(--primary-ink)' : 'var(--accent-ink)',
+            }}
+          >
+            {resource.type === 'Room' ? '🏛' : '🔧'}
           </div>
           <div>
-            <h2 id="booking-title" className="text-lg font-bold leading-tight">Book Resource</h2>
-            <p className="text-xs text-slate-500">{resource.name} · {resource.type} · capacity {resource.capacity}</p>
+            <h2 id="booking-title" className="text-lg font-bold leading-tight" style={{ color: 'var(--ink)' }}>
+              Book Resource
+            </h2>
+            <p className="text-xs" style={{ color: 'var(--ink-soft)' }}>
+              {resource.name} · {resource.type} · capacity {resource.capacity}
+            </p>
           </div>
         </div>
 
@@ -121,6 +135,28 @@ export default function BookingModal({ resource, onClose, onCreated }) {
               disabled={submitting}
             />
             {errors.bookingDate && <p className="text-xs text-rose-600 mt-1">{errors.bookingDate}</p>}
+          </div>
+
+          <div>
+            <label className="label">Purpose</label>
+            <div className="flex flex-wrap gap-1.5">
+              {PURPOSES.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPurpose(p)}
+                  disabled={submitting}
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors"
+                  style={
+                    purpose === p
+                      ? { background: 'var(--primary)', color: 'var(--primary-ink)', borderColor: 'var(--primary)' }
+                      : { background: 'var(--surface-alt)', color: 'var(--ink-soft)', borderColor: 'var(--border)' }
+                  }
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

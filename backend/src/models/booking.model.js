@@ -31,6 +31,11 @@ module.exports = (sequelize) => {
         type: DataTypes.TIME,
         allowNull: false,
       },
+      purpose: {
+        type: DataTypes.ENUM('Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'),
+        allowNull: false,
+        defaultValue: 'Class',
+      },
       status: {
         type: DataTypes.STRING(30),
         allowNull: false,

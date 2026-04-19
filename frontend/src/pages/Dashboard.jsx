@@ -48,34 +48,29 @@ export default function Dashboard() {
 
   return (
     <section className="fade-in">
-      {/* Hero */}
+      {/* Hero (flat editorial) */}
       <div className="hero mb-8">
         <div className="relative z-10 max-w-2xl">
-          <p className="text-accent-200 text-xs uppercase tracking-[0.2em] font-bold">
-            Jahangirnagar University · CSE
-          </p>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mt-2 leading-tight">
-            Book a room,<br className="hidden sm:block" />
-            in seconds.
+          <span className="hero-eyebrow">Jahangirnagar University · CSE</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mt-4 leading-[1.1]">
+            Book a room.<br className="hidden sm:block" />
+            <span style={{ color: 'var(--accent)' }}>See it live.</span>
           </h1>
-          <p className="text-indigo-100/90 mt-3 text-sm sm:text-base max-w-lg">
-            Reserve classrooms, labs, libraries, and shared equipment — every booking is
-            instantly visible to the whole department.
+          <p className="mt-3 text-sm sm:text-base max-w-lg" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            Reserve classrooms, labs and shared equipment. Track occupancy across the
+            department in real time.
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20">
-              <span>🏛️</span> {resources.filter(r => r.type === 'Room').length} rooms
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider"
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              {resources.filter(r => r.type === 'Room').length} rooms
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20">
-              <span>🔧</span> {resources.filter(r => r.type === 'Equipment').length} equipment
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-400/90 text-brand-900 border border-accent-300">
-              <span>⚡</span> Live updates
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider"
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              {resources.filter(r => r.type === 'Equipment').length} equipment
             </span>
           </div>
         </div>
-        <div className="pointer-events-none absolute -right-8 -top-8 w-64 h-64 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -right-20 -bottom-16 w-80 h-80 rounded-full bg-accent-400/25 blur-3xl" />
       </div>
 
       {/* Toolbar */}
@@ -89,14 +84,17 @@ export default function Dashboard() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 w-fit">
+        <div className="flex gap-1 rounded-lg p-1 w-fit" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           {['All', 'Room', 'Equipment'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                filter === f ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className="px-3 py-1.5 text-sm font-semibold rounded-md transition-colors"
+              style={
+                filter === f
+                  ? { background: 'var(--primary)', color: 'var(--primary-ink)' }
+                  : { color: 'var(--ink-soft)', background: 'transparent' }
+              }
             >
               {f}
             </button>
@@ -124,19 +122,33 @@ export default function Dashboard() {
           {visible.map((r) => {
             const facilities = (r.facilities || '').split(',').map(s => s.trim()).filter(Boolean);
             return (
-              <div key={r.id} className="resource-card">
+              <div key={r.id} className="resource-card pl-6" data-type={r.type}>
                 <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-xl text-2xl grid place-items-center shadow-sm"
-                       style={{ backgroundImage: 'linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%)' }}>
+                  <div
+                    className="w-11 h-11 rounded-lg grid place-items-center text-xl"
+                    style={{
+                      background: r.type === 'Room' ? 'var(--primary-soft)' : 'var(--accent-soft)',
+                      color: r.type === 'Room' ? 'var(--primary)' : 'var(--accent)',
+                    }}
+                  >
                     {iconFor(r)}
                   </div>
-                  <span className={`badge ${r.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-accent-100 text-accent-700'}`}>
+                  <span
+                    className="badge uppercase"
+                    style={
+                      r.type === 'Room'
+                        ? { background: 'var(--primary-soft)', color: 'var(--primary)' }
+                        : { background: 'var(--accent-soft)', color: 'var(--accent)' }
+                    }
+                  >
                     {r.type}
                   </span>
                 </div>
-                <h3 className="font-bold text-lg mt-3 leading-tight">{r.name}</h3>
-                <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5">
-                  <span>👥</span> Capacity <strong className="text-slate-700">{r.capacity}</strong>
+                <h3 className="font-bold text-base mt-3 leading-tight" style={{ color: 'var(--ink)' }}>
+                  {r.name}
+                </h3>
+                <div className="text-xs mt-1 flex items-center gap-1.5" style={{ color: 'var(--ink-soft)' }}>
+                  <span>👥</span> Capacity <strong style={{ color: 'var(--ink)' }}>{r.capacity}</strong>
                 </div>
                 {facilities.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-3">
@@ -144,16 +156,11 @@ export default function Dashboard() {
                       <span key={i} className="chip">{f}</span>
                     ))}
                     {facilities.length > 4 && (
-                      <span className="chip bg-surface-100 text-slate-500 border-surface-200">
-                        +{facilities.length - 4}
-                      </span>
+                      <span className="chip">+{facilities.length - 4}</span>
                     )}
                   </div>
                 )}
-                <button
-                  className="btn-primary w-full mt-4"
-                  onClick={() => setSelected(r)}
-                >
+                <button className="btn btn-primary w-full mt-4" onClick={() => setSelected(r)}>
                   Book Now
                 </button>
               </div>

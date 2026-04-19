@@ -59,6 +59,73 @@ const RESET = process.argv.includes('--reset');
 
     const total = await Resource.count();
     console.log(`[seed] Inserted ${created} new resources. Total now: ${total}`);
+
+    // Seed a few sample bookings only on --reset, centered around "right now"
+    // so the Availability page has realistic live data on first launch.
+    if (RESET) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const h = now.getHours();
+
+      const hhmm = (hr, min = 0) => `${pad(hr)}:${pad(min)}:00`;
+      const safe = Math.max(8, Math.min(17, h)); // keep times 08–17
+
+      const rooms = await Resource.findAll({ where: { type: 'Room' } });
+      const byName = Object.fromEntries(rooms.map((r) => [r.name, r.id]));
+
+      const samples = [
+        // Ongoing right now
+        {
+          name: 'Classroom 101',
+          requested_by: 'Dr. Nasima Akter',
+          start_time: hhmm(safe - 1, 0),
+          end_time: hhmm(safe + 1, 0),
+          purpose: 'Class',
+        },
+        {
+          name: 'Computer Lab 201',
+          requested_by: 'Prof. Rahman',
+          start_time: hhmm(safe, 0),
+          end_time: hhmm(safe + 2, 0),
+          purpose: 'Lab',
+        },
+        // Starting within ~30 min
+        {
+          name: 'Seminar Room / Exam Room 202',
+          requested_by: 'Dr. Haque',
+          start_time: hhmm(safe, 30),
+          end_time: hhmm(safe + 2, 0),
+          purpose: 'Seminar',
+        },
+        // Later today
+        {
+          name: 'Classroom 103',
+          requested_by: 'Dr. Chowdhury',
+          start_time: hhmm(safe + 3, 0),
+          end_time: hhmm(safe + 4, 0),
+          purpose: 'Meeting',
+        },
+      ];
+
+      let bookingsCreated = 0;
+      for (const s of samples) {
+        const rid = byName[s.name];
+        if (!rid) continue;
+        await Booking.create({
+          resource_id: rid,
+          requested_by: s.requested_by,
+          booking_date: today,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          purpose: s.purpose,
+          status: 'Confirmed',
+        });
+        bookingsCreated += 1;
+      }
+      console.log(`[seed] Inserted ${bookingsCreated} sample bookings for today (${today})`);
+    }
+
     process.exit(0);
   } catch (err) {
     console.error('[seed] Failed:', err.message);

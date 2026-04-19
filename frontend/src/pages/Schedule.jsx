@@ -70,8 +70,11 @@ export default function Schedule() {
     <section className="fade-in">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-extrabold">Schedule Viewer</h1>
-          <p className="text-slate-600 text-sm mt-1">
+          <p className="text-xs uppercase tracking-[0.2em] font-bold" style={{ color: 'var(--accent)' }}>
+            All Bookings
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-black mt-1" style={{ color: 'var(--ink)' }}>Schedule</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--ink-soft)' }}>
             {loading ? 'Loading bookings…' : `${visible.length} booking${visible.length === 1 ? '' : 's'}`}
           </p>
         </div>
@@ -114,33 +117,38 @@ export default function Schedule() {
           {/* Table (desktop) */}
           <div className="card overflow-hidden hidden md:block">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
+              <thead className="text-xs uppercase tracking-wider"
+                     style={{ background: 'var(--surface-alt)', color: 'var(--ink-soft)' }}>
                 <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Resource</th>
-                  <th className="text-left px-4 py-3 font-semibold">Type</th>
-                  <th className="text-left px-4 py-3 font-semibold">Requested By</th>
-                  <th className="text-left px-4 py-3 font-semibold">Date</th>
-                  <th className="text-left px-4 py-3 font-semibold">Time</th>
-                  <th className="text-left px-4 py-3 font-semibold">Status</th>
-                  <th className="text-right px-4 py-3 font-semibold">Action</th>
+                  <th className="text-left px-4 py-3 font-bold">Resource</th>
+                  <th className="text-left px-4 py-3 font-bold">Purpose</th>
+                  <th className="text-left px-4 py-3 font-bold">Requested By</th>
+                  <th className="text-left px-4 py-3 font-bold">Date</th>
+                  <th className="text-left px-4 py-3 font-bold">Time</th>
+                  <th className="text-right px-4 py-3 font-bold">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((b) => (
-                  <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
-                    <td className="px-4 py-3 font-medium">{b.resource?.name || `#${b.resource_id}`}</td>
+                  <tr key={b.id} className="transition-colors"
+                      style={{ borderTop: '1px solid var(--border)' }}>
                     <td className="px-4 py-3">
-                      <span className={`badge ${b.resource?.type === 'Room' ? 'bg-brand-100 text-brand-700' : 'bg-accent-100 text-accent-700'}`}>
+                      <div className="font-semibold" style={{ color: 'var(--ink)' }}>
+                        {b.resource?.name || `#${b.resource_id}`}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
                         {b.resource?.type || '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{b.requested_by}</td>
-                    <td className="px-4 py-3 tabular-nums">{formatDate(b.booking_date)}</td>
-                    <td className="px-4 py-3 tabular-nums font-medium text-brand-700">
-                      {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="badge bg-emerald-100 text-emerald-700">● {b.status}</span>
+                      <span className="chip chip-primary">{b.purpose}</span>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--ink)' }}>{b.requested_by}</td>
+                    <td className="px-4 py-3 tabular-nums" style={{ color: 'var(--ink-soft)' }}>
+                      {formatDate(b.booking_date)}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums font-semibold" style={{ color: 'var(--primary)' }}>
+                      {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -162,15 +170,19 @@ export default function Schedule() {
               <div key={b.id} className="card p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-semibold">{b.resource?.name}</div>
-                    <div className="text-xs text-slate-500">{b.resource?.type}</div>
+                    <div className="font-bold" style={{ color: 'var(--ink)' }}>{b.resource?.name}</div>
+                    <div className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--ink-faint)' }}>
+                      {b.resource?.type}
+                    </div>
                   </div>
-                  <span className="badge bg-emerald-100 text-emerald-700">{b.status}</span>
+                  <span className="chip chip-primary">{b.purpose}</span>
                 </div>
-                <div className="text-sm text-slate-600 mt-3 space-y-1">
-                  <div>👤 {b.requested_by}</div>
+                <div className="text-sm mt-3 space-y-1" style={{ color: 'var(--ink-soft)' }}>
+                  <div>👤 <span style={{ color: 'var(--ink)' }}>{b.requested_by}</span></div>
                   <div>📅 {formatDate(b.booking_date)}</div>
-                  <div className="font-medium text-brand-700">⏰ {fmtTime(b.start_time)} – {fmtTime(b.end_time)}</div>
+                  <div className="font-semibold" style={{ color: 'var(--primary)' }}>
+                    ⏰ {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
+                  </div>
                 </div>
                 <button
                   className="btn-danger w-full mt-3"

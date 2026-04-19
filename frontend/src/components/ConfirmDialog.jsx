@@ -31,8 +31,8 @@ export default function ConfirmDialog({
         className="modal-panel card w-full max-w-sm p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold">{title}</h3>
-        {message && <p className="text-sm text-slate-600 mt-1">{message}</p>}
+        <h3 className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{title}</h3>
+        {message && <p className="text-sm mt-1" style={{ color: 'var(--ink-soft)' }}>{message}</p>}
         <div className="flex justify-end gap-2 mt-5">
           <button type="button" className="btn-ghost" onClick={onCancel} disabled={loading}>{cancelLabel}</button>
           <button
