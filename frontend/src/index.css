@@ -4,13 +4,52 @@
 
 html, body, #root { height: 100%; }
 
-@layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed; }
-  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
-  .btn-danger  { @apply btn bg-red-600 text-white hover:bg-red-700; }
-  .btn-ghost   { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-100; }
-  .card        { @apply bg-white border border-slate-200 rounded-xl shadow-sm; }
-  .input       { @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500; }
-  .label       { @apply block text-sm font-medium text-slate-700 mb-1; }
-  .badge       { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold; }
+body {
+  background:
+    radial-gradient(1200px 600px at -10% -10%, rgba(37,99,235,0.12), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(16,185,129,0.10), transparent 60%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  min-height: 100vh;
 }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1; }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm hover:shadow focus:ring-brand-500; }
+  .btn-danger  { @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow focus:ring-red-500; }
+  .btn-ghost   { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 focus:ring-slate-300; }
+  .card        { @apply bg-white border border-slate-200 rounded-2xl shadow-sm; }
+  .input       { @apply w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors; }
+  .label       { @apply block text-sm font-semibold text-slate-700 mb-1.5; }
+  .badge       { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold; }
+
+  .resource-card {
+    @apply card p-5 flex flex-col relative overflow-hidden transition-all duration-200;
+  }
+  .resource-card:hover {
+    @apply shadow-lg -translate-y-0.5 border-brand-200;
+  }
+  .resource-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-emerald-500 opacity-0 transition-opacity duration-200;
+  }
+  .resource-card:hover::before { @apply opacity-100; }
+}
+
+/* Smooth modal animation */
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+.modal-panel { animation: modalIn 160ms ease-out; }
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.fade-in { animation: fadeIn 200ms ease-out; }
+
+.spinner {
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #ffffff;
+  border-radius: 9999px;
+  width: 14px; height: 14px;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

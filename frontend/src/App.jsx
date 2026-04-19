@@ -14,8 +14,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500 flex justify-between">
+      <footer className="border-t border-slate-200 bg-white/70 backdrop-blur">
+        <div className="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500 flex flex-col sm:flex-row gap-1 justify-between">
           <span>SpaceSync © {new Date().getFullYear()} — CSE, Jahangirnagar University</span>
           <span>CSE 362 Lab Final</span>
         </div>
