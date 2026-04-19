@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  /* Light mode (default) */
+  :root {
+    --bg-background: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-surface-container-lowest: #f8f9fa;
+    --bg-surface-container-low: #f0f2f5;
+    --bg-surface-container: #e8eaef;
+    --bg-surface-container-high: #dfe2ed;
+    --bg-surface-container-highest: #d6daee;
+    --bg-surface-variant: #d6daee;
+    --bg-surface-bright: #e0e3ed;
+    --text-on-surface: #1a1f2e;
+    --text-on-surface-variant: #4a5568;
+    --border-outline: #9ca3af;
+    --border-outline-variant: #cbd5e1;
+  }
+
+  /* Dark mode */
+  html.dark {
+    --bg-background: #0e1321;
+    --bg-surface: #0e1321;
+    --bg-surface-container-lowest: #090e1c;
+    --bg-surface-container-low: #161b2a;
+    --bg-surface-container: #1a1f2e;
+    --bg-surface-container-high: #252a39;
+    --bg-surface-container-highest: #303444;
+    --bg-surface-variant: #303444;
+    --bg-surface-bright: #343948;
+    --text-on-surface: #dee2f6;
+    --text-on-surface-variant: #e0c0b2;
+    --border-outline: #a88a7e;
+    --border-outline-variant: #594238;
+  }
+
+  body {
+    background-color: var(--bg-background);
+    color: var(--text-on-surface);
+    font-family: 'Space Grotesk', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  ::-webkit-scrollbar       { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,181,149,0.1); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,181,149,0.3); }
+
+  html.dark ::-webkit-scrollbar-thumb { background: rgba(255,181,149,0.2); }
+  html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,181,149,0.4); }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    user-select: none;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}
