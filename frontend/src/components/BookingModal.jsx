@@ -12,12 +12,19 @@ function todayStr() {
 
 const PURPOSES = ['Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'];
 
-export default function BookingModal({ resource, onClose, onCreated }) {
+export default function BookingModal({
+  resource,
+  onClose,
+  onCreated,
+  initialDate = '',
+  initialStart = '09:00',
+  initialEnd = '10:30',
+}) {
   const user = getUser();
   const requestedBy = user?.name || '';
-  const [bookingDate, setBookingDate] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:30');
+  const [bookingDate, setBookingDate] = useState(initialDate);
+  const [startTime, setStartTime] = useState(initialStart);
+  const [endTime, setEndTime] = useState(initialEnd);
   const [purpose, setPurpose] = useState(resource.type === 'Equipment' ? 'Other' : 'Class');
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});

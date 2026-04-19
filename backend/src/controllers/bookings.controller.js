@@ -163,7 +163,16 @@ exports.remove = async (req, res, next) => {
     const booking = await Booking.findByPk(id);
     if (!booking) return res.status(404).json({ error: `Booking ${id} not found` });
 
-    // Authorization: Admins can cancel anything; everyone else only their own.
+    // Authorization:
+    //   • Students can NEVER cancel a booking — not even their own (they can't
+    //     create one anyway, but we reject explicitly for defence-in-depth).
+    //   • Admins can cancel ANY booking.
+    //   • Teacher / ClassRep / Staff can only cancel bookings they own.
+    if (req.user.role === 'Student') {
+      return res.status(403).json({
+        error: 'Students are not allowed to cancel bookings. Ask a Teacher, Class Representative or the office staff.',
+      });
+    }
     const isAdmin = req.user.role === 'Admin';
     const isOwner = booking.user_id != null && booking.user_id === req.user.id;
     if (!isAdmin && !isOwner) {

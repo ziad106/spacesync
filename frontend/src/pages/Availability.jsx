@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
-import { getUser, updateUser, isAuthed } from '../auth';
+import BookingModal from '../components/BookingModal';
+import { getUser, updateUser, isAuthed, canBook, whyCannotBook } from '../auth';
 
 const UPCOMING_WINDOW_MIN = 30;
 
@@ -45,6 +46,45 @@ export default function Availability() {
   const [err, setErr] = useState(null);
   const [now, setNow] = useState(nowParts());
   const [releasingId, setReleasingId] = useState(null);
+  const [bookTarget, setBookTarget] = useState(null); // { resource, initialStart, initialEnd, initialDate }
+  const mayBook = canBook();
+
+  /** For a given room, compute the earliest non-conflicting 1-hour slot
+   *  starting today, rounded up to the next :00 or :30 after "now". */
+  function suggestSlot(resource) {
+    const baseMin = Math.min(21 * 60, now.minutes + 5); // give 5-min buffer, cap at 21:00
+    const startMin = Math.ceil(baseMin / 30) * 30;       // round up to :00 / :30
+    const endMin = Math.min(22 * 60, startMin + 60);      // 1 h, cap at 22:00
+
+    // Walk forward in 30-min steps until we find a slot that doesn't overlap
+    // any existing booking for this resource today. Prevents the server 400.
+    const todays = bookings.filter(
+      (b) => b.resource_id === resource.id && b.booking_date === now.date
+    );
+    const overlaps = (s, e) =>
+      todays.some((b) => s < toMin(b.end_time) && toMin(b.start_time) < e);
+
+    let s = startMin;
+    let e = endMin;
+    for (let guard = 0; guard < 48 && overlaps(s, e); guard += 1) {
+      s += 30;
+      e = Math.min(22 * 60, s + 60);
+      if (s >= 22 * 60) break;
+    }
+    const toHHMM = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+    return { start: toHHMM(s), end: toHHMM(e) };
+  }
+
+  function handleBookFree(resource) {
+    if (!isAuthed()) {
+      toast('Sign in to book a resource', { icon: '🔒' });
+      nav('/login', { state: { from: '/availability' } });
+      return;
+    }
+    if (!mayBook) { toast.error(whyCannotBook()); return; }
+    const { start, end } = suggestSlot(resource);
+    setBookTarget({ resource, initialDate: now.date, initialStart: start, initialEnd: end });
+  }
 
   const load = useCallback(async () => {
     setErr(null);
@@ -199,10 +239,26 @@ export default function Availability() {
       <Section title="Free right now" count={free.length} dotClass="ok" emptyText="No rooms are free at this moment.">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {free.map(({ resource }) => (
-            <FreeCard key={resource.id} resource={resource} />
+            <FreeCard
+              key={resource.id}
+              resource={resource}
+              onBook={() => handleBookFree(resource)}
+              mayBook={mayBook}
+            />
           ))}
         </div>
       </Section>
+
+      {bookTarget && (
+        <BookingModal
+          resource={bookTarget.resource}
+          initialDate={bookTarget.initialDate}
+          initialStart={bookTarget.initialStart}
+          initialEnd={bookTarget.initialEnd}
+          onClose={() => setBookTarget(null)}
+          onCreated={() => { setBookTarget(null); load(); }}
+        />
+      )}
     </section>
   );
 }
@@ -311,9 +367,9 @@ function UpcomingCard({ resource, booking, nowMin }) {
   );
 }
 
-function FreeCard({ resource }) {
+function FreeCard({ resource, onBook, mayBook }) {
   return (
-    <div className="card p-4" style={{ borderLeft: '4px solid var(--ok)' }}>
+    <div className="card p-4 flex flex-col" style={{ borderLeft: '4px solid var(--ok)' }}>
       <div className="flex items-start justify-between">
         <span className="font-bold text-sm" style={{ color: 'var(--ink)' }}>{resource.name}</span>
         <span className="status-dot ok" />
@@ -321,6 +377,15 @@ function FreeCard({ resource }) {
       <div className="text-xs mt-1" style={{ color: 'var(--ink-soft)' }}>
         Capacity {resource.capacity}
       </div>
+      <button
+        type="button"
+        onClick={onBook}
+        title={mayBook ? `Book ${resource.name} now` : 'Sign in as Teacher / CR / Staff / Admin to book'}
+        className="btn-primary text-xs !px-3 !py-1.5 mt-3 w-full"
+        style={!mayBook ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+      >
+        + Book this room
+      </button>
     </div>
   );
 }

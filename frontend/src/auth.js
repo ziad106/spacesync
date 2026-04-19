@@ -54,9 +54,11 @@ export function canBook(user = getUser()) {
   return !!user && BOOKING_ROLES.includes(user.role);
 }
 
-/** Admin can cancel any booking; everyone else only bookings they own. */
+/** Admin can cancel any booking. Teacher/ClassRep/Staff only bookings they own.
+ *  Students can NEVER cancel — they are explicitly blocked. */
 export function canCancel(booking, user = getUser()) {
   if (!user || !booking) return false;
+  if (user.role === 'Student') return false;
   if (user.role === 'Admin') return true;
   return booking.user_id != null && booking.user_id === user.id;
 }
