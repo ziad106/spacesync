@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "SpaceSync API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST Add Resource - Networking Lab",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Networking Lab\",\"type\":\"Room\",\"capacity\":40}"
+        },
+        "url": { "raw": "http://localhost:5000/api/resources", "host": ["localhost"], "port": "5000", "path": ["api","resources"] }
+      }
+    },
+    {
+      "name": "POST Add Resource - Seminar Library",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Seminar Library\",\"type\":\"Room\",\"capacity\":60}"
+        },
+        "url": { "raw": "http://localhost:5000/api/resources", "host": ["localhost"], "port": "5000", "path": ["api","resources"] }
+      }
+    },
+    {
+      "name": "POST Add Resource - Projector-01",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Projector-01\",\"type\":\"Equipment\",\"capacity\":1}"
+        },
+        "url": { "raw": "http://localhost:5000/api/resources", "host": ["localhost"], "port": "5000", "path": ["api","resources"] }
+      }
+    },
+    {
+      "name": "GET All Resources",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:5000/api/resources", "host": ["localhost"], "port": "5000", "path": ["api","resources"] }
+      }
+    },
+    {
+      "name": "POST Create Booking",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"resource_id\":1,\"requested_by\":\"Dr. Ali\",\"booking_date\":\"2026-04-25\"}"
+        },
+        "url": { "raw": "http://localhost:5000/api/bookings", "host": ["localhost"], "port": "5000", "path": ["api","bookings"] }
+      }
+    },
+    {
+      "name": "GET All Bookings",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:5000/api/bookings", "host": ["localhost"], "port": "5000", "path": ["api","bookings"] }
+      }
+    },
+    {
+      "name": "POST Double-Booking Test (expect 400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"resource_id\":1,\"requested_by\":\"Dr. Ali\",\"booking_date\":\"2026-04-25\"}"
+        },
+        "url": { "raw": "http://localhost:5000/api/bookings", "host": ["localhost"], "port": "5000", "path": ["api","bookings"] }
+      }
+    },
+    {
+      "name": "DELETE Cancel Booking",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "http://localhost:5000/api/bookings/1", "host": ["localhost"], "port": "5000", "path": ["api","bookings","1"] }
+      }
+    }
+  ]
+}
