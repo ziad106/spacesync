@@ -1,6 +1,8 @@
 const { DataTypes } = require('sequelize');
 
-const ROLES = ['Student', 'Teacher', 'Staff', 'ClassRep'];
+const ROLES = ['Student', 'Teacher', 'Staff', 'ClassRep', 'Admin'];
+// Roles allowed to create/own a booking. Students are deliberately excluded.
+const BOOKING_ROLES = ['Teacher', 'ClassRep', 'Staff', 'Admin'];
 
 module.exports = (sequelize) => {
   const User = sequelize.define(
@@ -57,5 +59,6 @@ module.exports = (sequelize) => {
   );
 
   User.ROLES = ROLES;
+  User.BOOKING_ROLES = BOOKING_ROLES;
   return User;
 };

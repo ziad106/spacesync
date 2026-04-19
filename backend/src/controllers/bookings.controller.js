@@ -41,6 +41,7 @@ exports.list = async (req, res, next) => {
     const bookings = await Booking.findAll({
       include: [
         { model: Resource, as: 'resource' },
+        { model: User, as: 'owner', attributes: ['id', 'name', 'role'] },
         {
           model: EarlyRelease,
           as: 'early_release',
@@ -57,9 +58,20 @@ exports.list = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
+    // Authentication is guaranteed by the route-level requireAuth middleware,
+    // but we double-check here so the controller is safe in isolation.
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
+    // Authorization: Students cannot book. Only Teacher/ClassRep/Staff/Admin.
+    if (!User.BOOKING_ROLES.includes(req.user.role)) {
+      return res.status(403).json({
+        error: `Your role (${req.user.role}) is not allowed to book resources. Only Teachers, Class Representatives, Staff and Admins can book.`,
+      });
+    }
+
     const resource_id = parseId(req.body.resource_id);
-    const requested_by =
-      typeof req.body.requested_by === 'string' ? req.body.requested_by.trim() : '';
+    // Always use the logged-in user's own name — no impersonation.
+    const requested_by = req.user.name;
     const booking_date =
       typeof req.body.booking_date === 'string' ? req.body.booking_date.trim() : '';
     const startRaw =
@@ -120,6 +132,7 @@ exports.create = async (req, res, next) => {
 
     const booking = await Booking.create({
       resource_id,
+      user_id: req.user.id,
       requested_by,
       booking_date,
       start_time,
@@ -128,9 +141,12 @@ exports.create = async (req, res, next) => {
       status: 'Confirmed',
     });
 
-    // Return with nested resource for convenience
+    // Return with nested resource + owner for convenience
     const withResource = await Booking.findByPk(booking.id, {
-      include: [{ model: Resource, as: 'resource' }],
+      include: [
+        { model: Resource, as: 'resource' },
+        { model: User, as: 'owner', attributes: ['id', 'name', 'role'] },
+      ],
     });
     res.status(201).json(withResource);
   } catch (err) {
@@ -140,11 +156,21 @@ exports.create = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const id = parseId(req.params.id);
     if (!id) return res.status(400).json({ error: 'id must be a positive integer' });
 
     const booking = await Booking.findByPk(id);
     if (!booking) return res.status(404).json({ error: `Booking ${id} not found` });
+
+    // Authorization: Admins can cancel anything; everyone else only their own.
+    const isAdmin = req.user.role === 'Admin';
+    const isOwner = booking.user_id != null && booking.user_id === req.user.id;
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({
+        error: 'You can only cancel bookings you created. Ask an admin to cancel others.',
+      });
+    }
 
     await booking.destroy();
     res.json({ deleted: true, id });

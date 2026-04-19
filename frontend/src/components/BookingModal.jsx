@@ -13,7 +13,8 @@ function todayStr() {
 const PURPOSES = ['Class', 'Lab', 'Seminar', 'Meeting', 'Exam', 'Other'];
 
 export default function BookingModal({ resource, onClose, onCreated }) {
-  const [requestedBy, setRequestedBy] = useState(() => getUser()?.name || '');
+  const user = getUser();
+  const requestedBy = user?.name || '';
   const [bookingDate, setBookingDate] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:30');
@@ -31,8 +32,6 @@ export default function BookingModal({ resource, onClose, onCreated }) {
 
   const validate = () => {
     const e = {};
-    if (!requestedBy.trim()) e.requestedBy = 'Please enter your name';
-    else if (requestedBy.trim().length < 2) e.requestedBy = 'Name is too short';
     if (!bookingDate) e.bookingDate = 'Please pick a date';
     else if (bookingDate < todayStr()) e.bookingDate = 'Date cannot be in the past';
     if (!startTime) e.startTime = 'Pick a start time';
@@ -50,7 +49,6 @@ export default function BookingModal({ resource, onClose, onCreated }) {
     try {
       const booking = await api.createBooking({
         resource_id: resource.id,
-        requested_by: requestedBy.trim(),
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
@@ -110,18 +108,24 @@ export default function BookingModal({ resource, onClose, onCreated }) {
 
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
           <div>
-            <label className="label" htmlFor="requested_by">Requested By</label>
-            <input
+            <label className="label">Requested By</label>
+            <div
               ref={firstRef}
-              id="requested_by"
-              className={`input ${errors.requestedBy ? 'border-red-400 focus:ring-red-400 focus:border-red-400' : ''}`}
-              placeholder="e.g. Dr. Ali"
-              value={requestedBy}
-              onChange={(e) => setRequestedBy(e.target.value)}
-              maxLength={120}
-              disabled={submitting}
-            />
-            {errors.requestedBy && <p className="text-xs text-red-600 mt-1">{errors.requestedBy}</p>}
+              tabIndex={-1}
+              className="input flex items-center justify-between"
+              style={{ background: 'var(--surface-alt)', cursor: 'not-allowed' }}
+              title="This is taken from your account and cannot be changed."
+            >
+              <span style={{ color: 'var(--ink)' }}>
+                <strong>{requestedBy}</strong>
+              </span>
+              {user?.role && (
+                <span className="chip chip-primary">{user.role}</span>
+              )}
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--ink-faint)' }}>
+              🔒 Booking will be recorded under your account.
+            </p>
           </div>
 
           <div>

@@ -42,11 +42,30 @@ CREATE TABLE `resources` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- Table: users  (declared BEFORE bookings because bookings.user_id references it)
+-- ------------------------------------------------------------
+CREATE TABLE `users` (
+  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`          VARCHAR(120) NOT NULL,
+  `email`         VARCHAR(160) NOT NULL,
+  `password_hash` VARCHAR(255) NOT NULL COMMENT 'bcrypt, 10 rounds',
+  `role`          ENUM('Student','Teacher','Staff','ClassRep','Admin') NOT NULL DEFAULT 'Student',
+  `department`    VARCHAR(80)  NOT NULL DEFAULT 'CSE',
+  `identifier`    VARCHAR(60)  DEFAULT NULL COMMENT 'Student ID or Employee ID',
+  `reward_points` INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at`    DATETIME     NOT NULL,
+  `updated_at`    DATETIME     NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- Table: bookings
 -- ------------------------------------------------------------
 CREATE TABLE `bookings` (
   `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `resource_id`  INT UNSIGNED NOT NULL,
+  `user_id`      INT UNSIGNED DEFAULT NULL COMMENT 'Owner — required via API, nullable for legacy rows',
   `requested_by` VARCHAR(120) NOT NULL,
   `booking_date` DATE         NOT NULL,
   `start_time`   TIME         NOT NULL,
@@ -58,28 +77,15 @@ CREATE TABLE `bookings` (
   `updated_at`   DATETIME     NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ix_bookings_resource_date` (`resource_id`, `booking_date`),
+  KEY `ix_bookings_user` (`user_id`),
   CONSTRAINT `fk_bookings_resource`
     FOREIGN KEY (`resource_id`) REFERENCES `resources`(`id`)
     ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_bookings_user`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+    ON DELETE SET NULL
     ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ------------------------------------------------------------
--- Table: users
--- ------------------------------------------------------------
-CREATE TABLE `users` (
-  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name`          VARCHAR(120) NOT NULL,
-  `email`         VARCHAR(160) NOT NULL,
-  `password_hash` VARCHAR(255) NOT NULL COMMENT 'bcrypt, 10 rounds',
-  `role`          ENUM('Student','Teacher','Staff','ClassRep') NOT NULL DEFAULT 'Student',
-  `department`    VARCHAR(80)  NOT NULL DEFAULT 'CSE',
-  `identifier`    VARCHAR(60)  DEFAULT NULL COMMENT 'Student ID or Employee ID',
-  `reward_points` INT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at`    DATETIME     NOT NULL,
-  `updated_at`    DATETIME     NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------

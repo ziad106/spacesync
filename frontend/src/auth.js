@@ -44,3 +44,28 @@ export function onAuthChange(cb) {
   window.addEventListener('authchange', h);
   return () => window.removeEventListener('authchange', h);
 }
+
+// --- Permission helpers ---------------------------------------------------
+// Must mirror backend rules exactly (see backend/src/controllers/bookings.controller.js)
+export const BOOKING_ROLES = ['Teacher', 'ClassRep', 'Staff', 'Admin'];
+
+/** Logged-in user who is allowed to create bookings. */
+export function canBook(user = getUser()) {
+  return !!user && BOOKING_ROLES.includes(user.role);
+}
+
+/** Admin can cancel any booking; everyone else only bookings they own. */
+export function canCancel(booking, user = getUser()) {
+  if (!user || !booking) return false;
+  if (user.role === 'Admin') return true;
+  return booking.user_id != null && booking.user_id === user.id;
+}
+
+/** Short human-readable reason the current user cannot book. */
+export function whyCannotBook(user = getUser()) {
+  if (!user) return 'Please sign in to book a resource.';
+  if (user.role === 'Student') {
+    return 'Students cannot book resources directly — ask your Class Representative or a Teacher to book on your behalf.';
+  }
+  return `Your role (${user.role}) is not permitted to book.`;
+}

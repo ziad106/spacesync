@@ -12,7 +12,11 @@ real time. Built for **CSE 362 Lab Final**.
 - **Booking modal** — pick date, start & end time, purpose (Class / Lab / Seminar / Meeting / Exam / Other); requester auto-fills from the logged-in user
 - **Time-overlap guard** — two bookings for the same room on the same day cannot overlap; adjacent slots are allowed
 - **"Right Now" live view** — see which rooms are occupied this minute (with professor name + purpose), which are starting within 30 min, and which are free; auto-refreshes every 30 s
-- **Accounts with roles** — register as **Student / Teacher / Staff / Class Representative**; JWT-based auth, bcrypt password hashing
+- **Accounts with roles** — register as **Student / Teacher / Staff / Class Representative** (Admin is seeded, not self-registerable); JWT-based auth, bcrypt password hashing
+- **Role-based permissions**
+  - Only **Teachers, Class Representatives, Staff and Admins** can create bookings — Students cannot book directly
+  - You can only cancel **bookings you created**; **Admins** can cancel any booking
+  - The booker's name is taken from the logged-in account — no impersonation possible
 - **Reward system** — any logged-in user can hit **★ Release Early** on an occupied room when a class / meeting / lab ends before its scheduled end time. They earn **+10 reward points**, and the room instantly flips to "Free" for the whole department
 - **Badges + leaderboard** — climb from 🌱 Newcomer → 🤝 Contributor (20) → 🌟 Helper (50) → 🏆 Champion (100) → 👑 Legend (250); top-10 board on the profile page
 - **Schedule viewer** — filterable table of every booking with cancel
@@ -152,14 +156,15 @@ Open **http://localhost:5173**. The Vite dev server proxies `/api/*` to the Expr
 
 All seeded users share the password **`password123`**:
 
-| Role | Email | Starting points |
-|---|---|---|
-| Teacher | `teacher@ju.edu` | 30 |
-| Student | `student@ju.edu` | 45 |
-| Class Representative | `cr@ju.edu` | 70 |
-| Staff | `staff@ju.edu` | 15 |
+| Role | Email | Can book? | Can cancel others'? | Starting points |
+|---|---|---|---|---|
+| **Admin** | `admin@ju.edu` | ✅ | ✅ (any booking) | 0 |
+| Teacher | `teacher@ju.edu` | ✅ | ❌ (own only) | 30 |
+| Class Representative | `cr@ju.edu` | ✅ | ❌ (own only) | 70 |
+| Staff | `staff@ju.edu` | ✅ | ❌ (own only) | 15 |
+| Student | `student@ju.edu` | ❌ | ❌ (own only — but can't create any) | 45 |
 
-The login page also has one-tap buttons for each of these.
+The login page has one-tap quick-fill buttons for each of these.
 
 ---
 
@@ -195,10 +200,10 @@ Base URL: `http://localhost:5000/api`
 | `GET` | `/auth/leaderboard` | — | Top-10 users by `reward_points` |
 | `GET` | `/resources` | — | List all resources |
 | `POST` | `/resources` | — | Create a resource |
-| `GET` | `/bookings` | — | List all bookings (nested `resource` + `early_release`) |
-| `POST` | `/bookings` | — | Create a booking (validates overlap) |
+| `GET` | `/bookings` | — | List all bookings (nested `resource`, `owner`, `early_release`) |
+| `POST` | `/bookings` | **Bearer** | Create a booking — role must be Teacher/ClassRep/Staff/Admin; `requested_by` is always the token user |
 | `POST` | `/bookings/:id/release` | **Bearer** | Report the room freed early; awards +10 pts |
-| `DELETE` | `/bookings/:id` | — | Cancel a booking |
+| `DELETE` | `/bookings/:id` | **Bearer** | Cancel — only the owner or an Admin |
 
 Pass JWT as `Authorization: Bearer <token>` for the marked routes.
 
@@ -249,7 +254,8 @@ See [`docs/schema.sql`](docs/schema.sql) for the DDL. Summary:
 |---|---|---|
 | `id` | INT UNSIGNED PK AUTO_INCREMENT | |
 | `resource_id` | INT UNSIGNED FK → `resources(id)` ON DELETE CASCADE | |
-| `requested_by` | VARCHAR(120) NOT NULL | |
+| `user_id` | INT UNSIGNED FK → `users(id)` ON DELETE SET NULL | owner; nullable for legacy rows |
+| `requested_by` | VARCHAR(120) NOT NULL | mirrored from `owner.name` at create-time |
 | `booking_date` | DATE NOT NULL | |
 | `start_time` | TIME NOT NULL | |
 | `end_time` | TIME NOT NULL | |
@@ -265,7 +271,7 @@ See [`docs/schema.sql`](docs/schema.sql) for the DDL. Summary:
 | `name` | VARCHAR(120) NOT NULL | |
 | `email` | VARCHAR(160) NOT NULL UNIQUE | |
 | `password_hash` | VARCHAR(255) NOT NULL | bcrypt, 10 rounds |
-| `role` | ENUM('Student','Teacher','Staff','ClassRep') | |
+| `role` | ENUM('Student','Teacher','Staff','ClassRep','Admin') | Admin is seed-only |
 | `department` | VARCHAR(80) DEFAULT 'CSE' | |
 | `identifier` | VARCHAR(60) NULL | Student ID / Employee ID |
 | `reward_points` | INT UNSIGNED DEFAULT 0 | |

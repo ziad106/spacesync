@@ -72,37 +72,59 @@ const RESET = process.argv.includes('--reset');
       const hhmm = (hr, min = 0) => `${pad(hr)}:${pad(min)}:00`;
       const safe = Math.max(8, Math.min(17, h)); // keep times 08–17
 
+      // Demo users — one per role. Default password for all: "password123".
+      // Seeded BEFORE sample bookings so each booking can be linked to its owner.
+      const hash = await bcrypt.hash('password123', 10);
+      const demoUsers = [
+        { name: 'Admin User',       email: 'admin@ju.edu',     role: 'Admin',     identifier: 'ADM-0001', reward_points: 0  },
+        { name: 'Dr. Nasima Akter', email: 'teacher@ju.edu',   role: 'Teacher',   identifier: 'EMP-0001', reward_points: 30 },
+        { name: 'Protik Saha',      email: 'student@ju.edu',   role: 'Student',   identifier: 'CSE-2021-042', reward_points: 45 },
+        { name: 'CR Rakib',         email: 'cr@ju.edu',        role: 'ClassRep',  identifier: 'CSE-2021-007', reward_points: 70 },
+        { name: 'Office Staff',     email: 'staff@ju.edu',     role: 'Staff',     identifier: 'STF-0012',  reward_points: 15 },
+      ];
+      const createdUsers = {};
+      for (const u of demoUsers) {
+        const row = await User.create({ ...u, password_hash: hash, department: 'CSE' });
+        createdUsers[u.email] = row;
+      }
+      console.log(`[seed] Inserted ${demoUsers.length} demo users (password: "password123")`);
+
+      const teacher  = createdUsers['teacher@ju.edu'];
+      const classRep = createdUsers['cr@ju.edu'];
+      const staff    = createdUsers['staff@ju.edu'];
+
       const rooms = await Resource.findAll({ where: { type: 'Room' } });
       const byName = Object.fromEntries(rooms.map((r) => [r.name, r.id]));
 
       const samples = [
-        // Ongoing right now
+        // Ongoing right now — owned by the Teacher demo account
         {
           name: 'Classroom 101',
-          requested_by: 'Dr. Nasima Akter',
+          owner: teacher,
           start_time: hhmm(safe - 1, 0),
           end_time: hhmm(safe + 1, 0),
           purpose: 'Class',
         },
+        // Ongoing — owned by the Class Rep
         {
           name: 'Computer Lab 201',
-          requested_by: 'Prof. Rahman',
+          owner: classRep,
           start_time: hhmm(safe, 0),
           end_time: hhmm(safe + 2, 0),
           purpose: 'Lab',
         },
-        // Starting within ~30 min
+        // Starting soon — owned by Staff
         {
           name: 'Seminar Room / Exam Room 202',
-          requested_by: 'Dr. Haque',
+          owner: staff,
           start_time: hhmm(safe, 30),
           end_time: hhmm(safe + 2, 0),
           purpose: 'Seminar',
         },
-        // Later today
+        // Later today — owned by Teacher again
         {
           name: 'Classroom 103',
-          requested_by: 'Dr. Chowdhury',
+          owner: teacher,
           start_time: hhmm(safe + 3, 0),
           end_time: hhmm(safe + 4, 0),
           purpose: 'Meeting',
@@ -112,10 +134,11 @@ const RESET = process.argv.includes('--reset');
       let bookingsCreated = 0;
       for (const s of samples) {
         const rid = byName[s.name];
-        if (!rid) continue;
+        if (!rid || !s.owner) continue;
         await Booking.create({
           resource_id: rid,
-          requested_by: s.requested_by,
+          user_id: s.owner.id,
+          requested_by: s.owner.name,
           booking_date: today,
           start_time: s.start_time,
           end_time: s.end_time,
@@ -125,21 +148,6 @@ const RESET = process.argv.includes('--reset');
         bookingsCreated += 1;
       }
       console.log(`[seed] Inserted ${bookingsCreated} sample bookings for today (${today})`);
-
-      // Demo users — one per role. Default password for all: "password123"
-      const hash = await bcrypt.hash('password123', 10);
-      const demoUsers = [
-        { name: 'Admin Teacher',    email: 'teacher@ju.edu',   role: 'Teacher',   identifier: 'EMP-0001', reward_points: 30 },
-        { name: 'Protik Saha',      email: 'student@ju.edu',   role: 'Student',   identifier: 'CSE-2021-042', reward_points: 45 },
-        { name: 'CR Rakib',         email: 'cr@ju.edu',        role: 'ClassRep',  identifier: 'CSE-2021-007', reward_points: 70 },
-        { name: 'Office Staff',     email: 'staff@ju.edu',     role: 'Staff',     identifier: 'STF-0012', reward_points: 15 },
-      ];
-      let usersCreated = 0;
-      for (const u of demoUsers) {
-        await User.create({ ...u, password_hash: hash, department: 'CSE' });
-        usersCreated += 1;
-      }
-      console.log(`[seed] Inserted ${usersCreated} demo users (password: "password123")`);
     }
 
     process.exit(0);

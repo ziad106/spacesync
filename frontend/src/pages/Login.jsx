@@ -77,10 +77,11 @@ export default function Login() {
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {[
+              ['Admin', 'admin@ju.edu'],
               ['Teacher', 'teacher@ju.edu'],
-              ['Student', 'student@ju.edu'],
               ['CR', 'cr@ju.edu'],
               ['Staff', 'staff@ju.edu'],
+              ['Student', 'student@ju.edu'],
             ].map(([label, em]) => (
               <button
                 key={em} type="button" onClick={() => quickFill(em)}

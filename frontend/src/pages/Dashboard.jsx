@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
 import BookingModal from '../components/BookingModal';
+import { canBook, whyCannotBook, getUser, onAuthChange } from '../auth';
 
 function iconFor(resource) {
   const n = resource.name.toLowerCase();
@@ -14,12 +16,30 @@ function iconFor(resource) {
 }
 
 export default function Dashboard() {
+  const nav = useNavigate();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All');
   const [selected, setSelected] = useState(null); // resource being booked
+  const [user, setUser] = useState(() => getUser());
+  const mayBook = canBook(user);
+
+  useEffect(() => onAuthChange(setUser), []);
+
+  function handleBookClick(resource) {
+    if (!user) {
+      toast('Please sign in to book a resource', { icon: '🔒' });
+      nav('/login', { state: { from: '/' } });
+      return;
+    }
+    if (!mayBook) {
+      toast.error(whyCannotBook(user));
+      return;
+    }
+    setSelected(resource);
+  }
 
   useEffect(() => {
     let alive = true;
@@ -72,6 +92,20 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Permissions notice for students & guests */}
+      {!mayBook && (
+        <div
+          className="card p-4 mb-4 flex items-start gap-3"
+          style={{ background: 'var(--accent-soft)', borderColor: 'transparent' }}
+        >
+          <span className="text-xl leading-none">ℹ️</span>
+          <div className="text-sm" style={{ color: 'var(--ink)' }}>
+            <strong>{user ? `Hi ${user.name.split(' ')[0]} —` : 'Viewing as guest.'}</strong>{' '}
+            <span style={{ color: 'var(--ink-soft)' }}>{whyCannotBook(user)}</span>
+          </div>
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
@@ -160,8 +194,13 @@ export default function Dashboard() {
                     )}
                   </div>
                 )}
-                <button className="btn btn-primary w-full mt-4" onClick={() => setSelected(r)}>
-                  Book Now
+                <button
+                  className="btn btn-primary w-full mt-4"
+                  onClick={() => handleBookClick(r)}
+                  title={mayBook ? `Book ${r.name}` : whyCannotBook(user)}
+                  style={!mayBook ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
+                >
+                  {user && user.role === 'Student' ? '🔒 Students cannot book' : 'Book Now'}
                 </button>
               </div>
             );

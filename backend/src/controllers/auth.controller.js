@@ -2,7 +2,9 @@ const bcrypt = require('bcryptjs');
 const { User, EarlyRelease } = require('../models');
 const { signToken } = require('../middleware/auth');
 
-const ROLES = ['Student', 'Teacher', 'Staff', 'ClassRep'];
+// Public signup roles — Admin is intentionally excluded; admins are created
+// only via the seed script (or by another admin, out of scope for this demo).
+const PUBLIC_ROLES = ['Student', 'Teacher', 'Staff', 'ClassRep'];
 
 function sanitize(user) {
   const u = user.toJSON();
@@ -26,8 +28,8 @@ exports.register = async (req, res, next) => {
     if (!password || password.length < 6) {
       return res.status(400).json({ error: 'password must be at least 6 characters' });
     }
-    if (!ROLES.includes(role)) {
-      return res.status(400).json({ error: `role must be one of: ${ROLES.join(', ')}` });
+    if (!PUBLIC_ROLES.includes(role)) {
+      return res.status(400).json({ error: `role must be one of: ${PUBLIC_ROLES.join(', ')}` });
     }
 
     const existing = await User.findOne({ where: { email } });

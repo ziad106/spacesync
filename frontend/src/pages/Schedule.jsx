@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../api/client';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { canCancel, getUser, onAuthChange } from '../auth';
 
 function formatDate(iso) {
   try {
@@ -23,6 +24,8 @@ export default function Schedule() {
   const [query, setQuery] = useState('');
   const [pendingDelete, setPendingDelete] = useState(null); // booking object
   const [deleting, setDeleting] = useState(false);
+  const [user, setUser] = useState(() => getUser());
+  useEffect(() => onAuthChange(setUser), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,12 +154,23 @@ export default function Schedule() {
                       {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        className="btn-danger text-xs !px-3 !py-1.5"
-                        onClick={() => setPendingDelete(b)}
-                      >
-                        Cancel
-                      </button>
+                      {canCancel(b, user) ? (
+                        <button
+                          className="btn-danger text-xs !px-3 !py-1.5"
+                          onClick={() => setPendingDelete(b)}
+                          title={user?.role === 'Admin' ? 'Admin cancel' : 'Cancel your booking'}
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <span
+                          className="text-xs italic"
+                          style={{ color: 'var(--ink-faint)' }}
+                          title={user ? 'Only the booker or an Admin can cancel' : 'Sign in to manage your bookings'}
+                        >
+                          —
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -184,12 +198,14 @@ export default function Schedule() {
                     ⏰ {fmtTime(b.start_time)} – {fmtTime(b.end_time)}
                   </div>
                 </div>
-                <button
-                  className="btn-danger w-full mt-3"
-                  onClick={() => setPendingDelete(b)}
-                >
-                  Cancel Booking
-                </button>
+                {canCancel(b, user) && (
+                  <button
+                    className="btn-danger w-full mt-3"
+                    onClick={() => setPendingDelete(b)}
+                  >
+                    Cancel Booking
+                  </button>
+                )}
               </div>
             ))}
           </div>

@@ -17,6 +17,18 @@ Booking.belongsTo(Resource, {
   as: 'resource',
 });
 
+// User 1 —— n Booking (owner). Nullable for legacy/seeded rows.
+User.hasMany(Booking, {
+  foreignKey: { name: 'user_id', allowNull: true },
+  as: 'bookings',
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE',
+});
+Booking.belongsTo(User, {
+  foreignKey: { name: 'user_id', allowNull: true },
+  as: 'owner',
+});
+
 // Booking 1 —— 1 EarlyRelease
 Booking.hasOne(EarlyRelease, {
   foreignKey: { name: 'booking_id', allowNull: false },

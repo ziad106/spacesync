@@ -13,6 +13,12 @@ module.exports = (sequelize) => {
         type: DataTypes.INTEGER.UNSIGNED,
         allowNull: false,
       },
+      user_id: {
+        // Owner of this booking — the user who created it. Nullable so legacy /
+        // seeded rows without an account still work; only Admins can cancel those.
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: true,
+      },
       requested_by: {
         type: DataTypes.STRING(120),
         allowNull: false,
