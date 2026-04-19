@@ -1,7 +1,20 @@
 const sequelize = require('../config/db');
 
-// Models will be registered in later phases. Keeping this as the single
-// import point so controllers always pull models from here.
-const models = {};
+const Resource = require('./resource.model')(sequelize);
+const Booking = require('./booking.model')(sequelize);
 
-module.exports = { sequelize, models };
+// Associations: One-to-Many (Resource -> Bookings)
+Resource.hasMany(Booking, {
+  foreignKey: { name: 'resource_id', allowNull: false },
+  as: 'bookings',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+Booking.belongsTo(Resource, {
+  foreignKey: { name: 'resource_id', allowNull: false },
+  as: 'resource',
+});
+
+const models = { Resource, Booking };
+
+module.exports = { sequelize, models, Resource, Booking };
